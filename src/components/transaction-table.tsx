@@ -10,11 +10,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileUp, Receipt } from 'lucide-react';
 import { transactions as initialTransactions, type Transaction, type TransactionStatus } from '@/lib/data';
-import { CostCodeSuggester } from './cost-code-suggester';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { TransactionDetailsDialog } from './transaction-details-dialog';
 
 const statusStyles: { [key in TransactionStatus]: string } = {
   'Complete': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800',
@@ -24,17 +30,24 @@ const statusStyles: { [key in TransactionStatus]: string } = {
 
 export function TransactionTable() {
   const [transactions, setTransactions] = React.useState<Transaction[]>(initialTransactions);
+  const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction | null>(null);
 
   const handleCostCodeUpdate = (transactionId: string, newCostCode: string) => {
     setTransactions(prev =>
       prev.map(t => (t.id === transactionId ? { ...t, costCode: newCostCode, status: newCostCode && t.receiptUrl ? "Pending Sync" : t.status } : t))
     );
+     if (selectedTransaction?.id === transactionId) {
+      setSelectedTransaction(prev => prev ? {...prev, costCode: newCostCode, status: newCostCode && prev.receiptUrl ? "Pending Sync" : prev.status} : null);
+    }
   };
   
   const handleReceiptUpload = (transactionId: string) => {
     setTransactions(prev =>
       prev.map(t => (t.id === transactionId ? { ...t, receiptUrl: `/receipts/new-receipt.pdf`, status: t.costCode ? "Pending Sync" : t.status } : t))
     );
+     if (selectedTransaction?.id === transactionId) {
+      setSelectedTransaction(prev => prev ? {...prev, receiptUrl: `/receipts/new-receipt.pdf`, status: prev.costCode ? "Pending Sync" : prev.status} : null);
+    }
   };
 
   return (
@@ -50,44 +63,42 @@ export function TransactionTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[250px]">Transaction</TableHead>
+                <TableHead className="w-[350px]">Transaction</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="w-[350px]">Cost Code</TableHead>
-                <TableHead className="text-center">Receipt</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {transactions.map(transaction => (
-                <TableRow key={transaction.id}>
-                  <TableCell>
-                    <div className="font-medium">{transaction.vendor}</div>
-                    <div className="text-sm text-muted-foreground truncate max-w-[200px]">{transaction.description}</div>
-                  </TableCell>
-                  <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right font-mono">${transaction.amount.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <CostCodeSuggester transaction={transaction} onUpdateCostCode={handleCostCodeUpdate} />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {transaction.receiptUrl ? (
-                      <Button variant="ghost" size="sm">
-                         <Receipt className="h-4 w-4 text-green-500" />
-                      </Button>
-                    ) : (
-                      <Button variant="outline" size="sm" onClick={() => handleReceiptUpload(transaction.id)}>
-                        <FileUp className="mr-2 h-4 w-4" />
-                        Upload
-                      </Button>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={statusStyles[transaction.status]}>
-                      {transaction.status}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
+                 <Dialog key={transaction.id} onOpenChange={(isOpen) => !isOpen && setSelectedTransaction(null)}>
+                  <DialogTrigger asChild>
+                    <TableRow 
+                      onClick={() => setSelectedTransaction(transaction)} 
+                      className="cursor-pointer"
+                    >
+                      <TableCell>
+                        <div className="font-medium">{transaction.vendor}</div>
+                        <div className="text-sm text-muted-foreground truncate max-w-[300px]">{transaction.description}</div>
+                      </TableCell>
+                      <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right font-mono">${transaction.amount.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={statusStyles[transaction.status]}>
+                          {transaction.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  </DialogTrigger>
+                  {selectedTransaction && selectedTransaction.id === transaction.id && (
+                     <TransactionDetailsDialog
+                        transaction={selectedTransaction}
+                        onUpdateCostCode={handleCostCodeUpdate}
+                        onReceiptUpload={handleReceiptUpload}
+                        statusStyle={statusStyles[selectedTransaction.status]}
+                     />
+                  )}
+                </Dialog>
               ))}
             </TableBody>
           </Table>
