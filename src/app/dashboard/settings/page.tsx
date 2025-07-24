@@ -1,3 +1,4 @@
+import { CsvImporter } from "@/components/csv-importer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function SettingsPage() {
@@ -11,11 +12,14 @@ export default function SettingsPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Application Settings</CardTitle>
-          <CardDescription>This is your settings page. More content to come!</CardDescription>
+          <CardTitle>Import Accounting Fields</CardTitle>
+          <CardDescription>
+            Upload a CSV file to update the accounting fields (Jobs, Phases, Categories) available for transactions. 
+            The CSV must have the headers: Job, Job Name, Phase, Phase Name, Category, Category Name.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <p>Application settings will be displayed here.</p>
+          <CsvImporter />
         </CardContent>
       </Card>
     </div>
