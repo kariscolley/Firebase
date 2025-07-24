@@ -2,16 +2,14 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read access to configuration for all users
-    match /configuration/{docId} {
-      allow read: if true;
-      // Allow write access only for authenticated users
-      allow write: if request.auth != null;
-    }
-    
-    // Lock down all other documents
+    // By default, deny all reads and writes
     match /{document=**} {
       allow read, write: if false;
+    }
+    
+    // Allow anyone to read and write to the accounting fields configuration
+    match /configuration/accountingFields {
+      allow read, write: if true;
     }
   }
 }

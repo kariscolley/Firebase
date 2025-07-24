@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition, useEffect } from 'react';
+import React, { useState, useTransition } from 'react';
 import Papa from 'papaparse';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,9 +10,6 @@ import { ScrollArea } from './ui/scroll-area';
 import { UploadCloud, CheckCircle, Loader } from 'lucide-react';
 import { type AccountingField } from '@/lib/data';
 import { saveAccountingFields } from '@/services/accounting-fields';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, signInAnonymously, type User } from 'firebase/auth';
-
 
 interface CsvRow {
   [key: string]: string;
@@ -22,33 +19,8 @@ export function CsvImporter() {
   const [file, setFile] = useState<File | null>(null);
   const [data, setData] = useState<AccountingField[]>([]);
   const [isPending, startTransition] = useTransition();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const signIn = async () => {
-        try {
-            await signInAnonymously(auth);
-        } catch (error) {
-            console.error("Anonymous sign-in failed", error);
-             toast({
-                variant: 'destructive',
-                title: 'Authentication Failed',
-                description: 'Could not authenticate with the server. Please refresh the page.',
-            });
-        }
-    }
-
-    if (!auth.currentUser) {
-        signIn();
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-
-    return () => unsubscribe();
-  }, [toast]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -110,15 +82,6 @@ export function CsvImporter() {
   };
 
   const handleSaveChanges = () => {
-    if (!currentUser) {
-      toast({
-        variant: 'destructive',
-        title: 'Authentication Error',
-        description: 'You must be logged in to save changes.',
-      });
-      return;
-    }
-
     startTransition(async () => {
        try {
         await saveAccountingFields(data);
@@ -137,7 +100,7 @@ export function CsvImporter() {
     })
   }
   
-  const isSaveDisabled = isPending || !currentUser || data.length === 0;
+  const isSaveDisabled = isPending || data.length === 0;
 
   return (
     <div className="space-y-4">
@@ -185,11 +148,6 @@ export function CsvImporter() {
             )}
             Save Changes
           </Button>
-           {!currentUser && !isPending && (
-            <p className="text-xs text-center text-destructive">
-              Authenticating... please wait before saving.
-            </p>
-          )}
         </div>
       )}
     </div>
