@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { transactions as initialTransactions, type Transaction, type TransactionStatus } from '@/lib/data';
 import {
   Dialog,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { TransactionDetailsDialog } from './transaction-details-dialog';
 
@@ -72,6 +73,7 @@ export function TransactionTable() {
             <TableBody>
               {transactions.map(transaction => (
                  <Dialog key={transaction.id} onOpenChange={(isOpen) => !isOpen && setSelectedTransaction(null)}>
+                  <DialogTrigger asChild>
                     <TableRow 
                       onClick={() => setSelectedTransaction(transaction)} 
                       className="cursor-pointer"
@@ -88,6 +90,7 @@ export function TransactionTable() {
                         </Badge>
                       </TableCell>
                     </TableRow>
+                  </DialogTrigger>
                   {selectedTransaction && selectedTransaction.id === transaction.id && (
                      <TransactionDetailsDialog
                         transaction={selectedTransaction}
