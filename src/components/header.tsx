@@ -1,3 +1,6 @@
+'use client';
+
+import * as React from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,8 +11,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Link as LinkIcon, LogOut, Settings, User, RefreshCw } from "lucide-react";
+import { Link as LinkIcon, LogOut, Settings, User } from "lucide-react";
 import Link from "next/link";
+
 
 export default function Header() {
   return (
@@ -22,10 +26,6 @@ export default function Header() {
           <span className="font-headline text-lg font-bold">Ramp Link</span>
         </Link>
         <div className="flex flex-1 items-center justify-end gap-4">
-          <Button variant="outline">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Sync with Ramp
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">

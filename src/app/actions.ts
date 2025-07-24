@@ -2,6 +2,10 @@
 
 import { suggestCostCode, type SuggestCostCodeInput, type SuggestCostCodeOutput } from '@/ai/flows/suggest-cost-code';
 import { z } from 'zod';
+import { saveAccountingFields } from '@/services/accounting-fields';
+import { saveCostCodes } from '@/services/cost-codes';
+import type { AccountingField, CostCode } from '@/lib/data';
+
 
 const actionInputSchema = z.object({
   transactionDescription: z.string(),
@@ -24,5 +28,25 @@ export async function getCostCodeSuggestion(
   } catch (error) {
     console.error("Error getting accounting code suggestion:", error);
     throw new Error("Failed to get AI suggestion. Please try again.");
+  }
+}
+
+export async function saveAccountingFieldsAction(fields: AccountingField[]) {
+  try {
+    await saveAccountingFields(fields);
+    return { success: true, message: 'Successfully saved accounting fields.' };
+  } catch (error) {
+    console.error("Error saving accounting fields:", error);
+    return { success: false, message: 'Failed to save accounting fields.' };
+  }
+}
+
+export async function saveCostCodesAction(codes: CostCode[]) {
+  try {
+    await saveCostCodes(codes);
+    return { success: true, message: 'Successfully saved chart of accounts.' };
+  } catch (error) {
+    console.error("Error saving cost codes:", error);
+    return { success: false, message: 'Failed to save chart of accounts.' };
   }
 }

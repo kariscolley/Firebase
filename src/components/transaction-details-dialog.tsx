@@ -22,7 +22,7 @@ import Image from 'next/image';
 import { ImageLightbox } from './image-lightbox';
 import { format, parseISO } from 'date-fns';
 import { Skeleton } from './ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Combobox } from './ui/combobox';
 
 interface TransactionDetailsDialogProps {
     transaction: Transaction;
@@ -39,7 +39,11 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
 
   // Derive available options from the selected values
   const availableJobs = React.useMemo(() => {
-    return [...new Map(accountingFields.map(item => [item.jobName, item])).values()];
+    return [...new Map(accountingFields.map(item => [item.jobName, item])).values()]
+      .map(item => ({
+          value: item.jobName,
+          label: `${item.jobId} - ${item.jobName}`
+      }));
   }, [accountingFields]);
 
   const availablePhases = React.useMemo(() => {
@@ -47,6 +51,10 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
     return accountingFields
       .filter(f => f.jobName === transaction.jobName)
       .filter((value, index, self) => self.findIndex(t => t.phaseName === value.phaseName) === index)
+      .map(item => ({
+          value: item.phaseName,
+          label: `${item.phaseId} - ${item.phaseName}`
+      }));
   }, [transaction.jobName, accountingFields]);
 
   const availableCategories = React.useMemo(() => {
@@ -54,6 +62,10 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
      return accountingFields
       .filter(f => f.jobName === transaction.jobName && f.phaseName === transaction.jobPhase)
       .filter((value, index, self) => self.findIndex(t => t.categoryName === value.categoryName) === index)
+      .map(item => ({
+          value: item.categoryName,
+          label: `${item.categoryId} - ${item.categoryName}`
+      }));
   }, [transaction.jobName, transaction.jobPhase, accountingFields]);
 
 
@@ -169,30 +181,35 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                 <>
                 <div className="space-y-2">
                     <Label>Job Name</Label>
-                    <Select value={transaction.jobName || ''} onValueChange={handleFieldChange('jobName')}>
-                        <SelectTrigger><SelectValue placeholder="Select job name..." /></SelectTrigger>
-                        <SelectContent>
-                            {availableJobs.map(job => <SelectItem key={job.jobId} value={job.jobName}>{`${job.jobId} - ${job.jobName}`}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+                    <Combobox
+                        placeholder="Select job name..."
+                        searchPlaceholder="Search jobs..."
+                        options={availableJobs}
+                        value={transaction.jobName || ''}
+                        onValueChange={handleFieldChange('jobName')}
+                    />
                 </div>
                 <div className="space-y-2">
                     <Label>Job Phase</Label>
-                    <Select value={transaction.jobPhase || ''} onValueChange={handleFieldChange('jobPhase')} disabled={!transaction.jobName}>
-                        <SelectTrigger><SelectValue placeholder="Select job phase..." /></SelectTrigger>
-                        <SelectContent>
-                             {availablePhases.map(phase => <SelectItem key={phase.phaseId} value={phase.phaseName}>{`${phase.phaseId} - ${phase.phaseName}`}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+                    <Combobox
+                        placeholder="Select job phase..."
+                        searchPlaceholder="Search phases..."
+                        options={availablePhases}
+                        value={transaction.jobPhase || ''}
+                        onValueChange={handleFieldChange('jobPhase')}
+                        disabled={!transaction.jobName}
+                    />
                 </div>
                 <div className="space-y-2">
                     <Label>Job Category</Label>
-                    <Select value={transaction.jobCategory || ''} onValueChange={handleFieldChange('jobCategory')} disabled={!transaction.jobPhase}>
-                        <SelectTrigger><SelectValue placeholder="Select job category..." /></SelectTrigger>
-                        <SelectContent>
-                            {availableCategories.map(cat => <SelectItem key={cat.categoryId} value={cat.categoryName}>{`${cat.categoryId} - ${cat.categoryName}`}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+                    <Combobox
+                        placeholder="Select job category..."
+                        searchPlaceholder="Search categories..."
+                        options={availableCategories}
+                        value={transaction.jobCategory || ''}
+                        onValueChange={handleFieldChange('jobCategory')}
+                        disabled={!transaction.jobPhase}
+                    />
                 </div>
                 </>
                 )}

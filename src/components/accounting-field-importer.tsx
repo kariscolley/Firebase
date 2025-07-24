@@ -5,17 +5,17 @@ import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
-import type { CostCode } from '@/lib/data';
-import { saveCostCodesAction } from '@/app/actions';
+import type { AccountingField } from '@/lib/data';
+import { saveAccountingFieldsAction } from '@/app/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Loader, UploadCloud } from 'lucide-react';
 
-const REQUIRED_HEADERS = ['Account', 'Name', 'Status'];
+const REQUIRED_HEADERS = ['jobId', 'jobName', 'phaseId', 'phaseName', 'categoryId', 'categoryName'];
 
-export function CostCodeImporter() {
+export function AccountingFieldImporter() {
   const [pending, startTransition] = useTransition();
   const { toast } = useToast();
-  const [parsedData, setParsedData] = useState<CostCode[]>([]);
+  const [parsedData, setParsedData] = useState<AccountingField[]>([]);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -34,12 +34,15 @@ export function CostCodeImporter() {
           setError(`Missing required columns: ${missingHeaders.join(', ')}`);
           return;
         }
-
-        const data = (results.data as any[]).map((row, index) => ({
-            id: row.Account || `${index}`,
-            account: row.Account || '',
-            name: row.Name || '',
-            status: row.Status === 'Active' ? 'Active' : 'Inactive',
+        
+        // Basic validation
+        const data = (results.data as any[]).map(row => ({
+            jobId: row.jobId || '',
+            jobName: row.jobName || '',
+            phaseId: row.phaseId || '',
+            phaseName: row.phaseName || '',
+            categoryId: row.categoryId || '',
+            categoryName: row.categoryName || ''
         }));
         
         setParsedData(data);
@@ -58,7 +61,7 @@ export function CostCodeImporter() {
 
   const handleSaveChanges = () => {
     startTransition(async () => {
-      const result = await saveCostCodesAction(parsedData);
+      const result = await saveAccountingFieldsAction(parsedData);
       if (result.success) {
         toast({ title: 'Success', description: result.message });
       } else {
@@ -91,17 +94,17 @@ export function CostCodeImporter() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Account</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Job</TableHead>
+                        <TableHead>Phase</TableHead>
+                        <TableHead>Category</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                {parsedData.slice(0, 10).map((row) => (
-                    <TableRow key={row.id}>
-                        <TableCell>{row.account}</TableCell>
-                        <TableCell>{row.name}</TableCell>
-                        <TableCell>{row.status}</TableCell>
+                {parsedData.slice(0, 10).map((row, index) => (
+                    <TableRow key={index}>
+                        <TableCell>{row.jobId} - {row.jobName}</TableCell>
+                        <TableCell>{row.phaseId} - {row.phaseName}</TableCell>
+                        <TableCell>{row.categoryId} - {row.categoryName}</TableCell>
                     </TableRow>
                 ))}
                 </TableBody>
