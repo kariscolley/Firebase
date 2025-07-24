@@ -19,7 +19,13 @@ import {
 import { TransactionDetailsDialog } from './transaction-details-dialog';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Button } from './ui/button';
+import { Calendar } from './ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Search, SlidersHorizontal, Calendar as CalendarIcon, X } from 'lucide-react';
+import { DateRange } from 'react-day-picker';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const statusStyles: { [key in TransactionStatus]: string } = {
   'Complete': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800',
@@ -34,6 +40,7 @@ export function TransactionTable() {
   const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction | null>(null);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<TransactionStatus | 'all'>('all');
+  const [dateFilter, setDateFilter] = React.useState<DateRange | undefined>(undefined);
 
   const handleFieldUpdate = (transactionId: string, field: keyof Transaction, value: string | null) => {
     setTransactions(prev =>
@@ -91,13 +98,18 @@ export function TransactionTable() {
     const searchTermLower = searchTerm.toLowerCase();
     const matchesSearch =
       transaction.vendor.toLowerCase().includes(searchTermLower) ||
-      transaction.description.toLowerCase().includes(searchTermLower) ||
-      transaction.amount.toString().includes(searchTermLower);
+      transaction.description.toLowerCase().includes(searchTermLower);
     
     const matchesStatus =
       statusFilter === 'all' || transaction.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    const transactionDate = new Date(transaction.date);
+    const matchesDate = 
+      !dateFilter ||
+      (dateFilter.from && !dateFilter.to && transactionDate >= dateFilter.from) ||
+      (dateFilter.from && dateFilter.to && transactionDate >= dateFilter.from && transactionDate <= dateFilter.to);
+
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   return (
@@ -107,18 +119,17 @@ export function TransactionTable() {
         <CardDescription>
           Review transactions that require a cost code or receipt.
         </CardDescription>
-        <div className="flex items-center gap-4 pt-4">
+        <div className="flex flex-wrap items-center gap-2 pt-4">
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search transactions..."
+              placeholder="Search by vendor or description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as TransactionStatus | 'all')}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by status" />
@@ -130,6 +141,47 @@ export function TransactionTable() {
                 ))}
               </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date"
+                  variant={"outline"}
+                  className={cn(
+                    "w-[260px] justify-start text-left font-normal",
+                    !dateFilter && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateFilter?.from ? (
+                    dateFilter.to ? (
+                      <>
+                        {format(dateFilter.from, "LLL dd, y")} -{" "}
+                        {format(dateFilter.to, "LLL dd, y")}
+                      </>
+                    ) : (
+                      format(dateFilter.from, "LLL dd, y")
+                    )
+                  ) : (
+                    <span>Filter by date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+               {dateFilter && (
+                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setDateFilter(undefined)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateFilter?.from}
+                  selected={dateFilter}
+                  onSelect={setDateFilter}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </CardHeader>
