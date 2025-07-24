@@ -1,8 +1,7 @@
 
-import { CsvImporter } from "@/components/csv-importer";
 import { CostCodeImporter } from "@/components/cost-code-importer";
+import { CsvImporter } from "@/components/csv-importer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 
 export default function SettingsPage() {
   return (
@@ -25,7 +24,7 @@ export default function SettingsPage() {
           <CsvImporter />
         </CardContent>
       </Card>
-      <Card>
+       <Card>
         <CardHeader>
           <CardTitle>Import Chart of Accounts</CardTitle>
           <CardDescription>

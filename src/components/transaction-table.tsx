@@ -21,7 +21,6 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Search, ArrowUpDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { cn } from '@/lib/utils';
 
 const statusStyles: { [key in TransactionStatus]: string } = {
   'Complete': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800',
