@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -11,7 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UploadCloud, CheckCircle, Trash2, Search, Loader } from 'lucide-react';
-import { type Transaction, costCodes } from '@/lib/data';
+import { type Transaction } from '@/lib/data';
 import { useAccountingFields } from '@/hooks/use-accounting-fields';
 import { CostCodeSuggester } from './cost-code-suggester';
 import { Label } from './ui/label';
@@ -169,7 +170,7 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                 <div className="space-y-2">
                     <Label>Job Name</Label>
                     <Select value={transaction.jobName || ''} onValueChange={handleFieldChange('jobName')}>
-                        <SelectTrigger><SelectValue placeholder="Select job name..." /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Select job name..." /></SelectValue>
                         <SelectContent>
                             {availableJobs.map(job => <SelectItem key={job.jobName} value={job.jobName}>{job.jobName}</SelectItem>)}
                         </SelectContent>
@@ -178,7 +179,7 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                 <div className="space-y-2">
                     <Label>Job Phase</Label>
                     <Select value={transaction.jobPhase || ''} onValueChange={handleFieldChange('jobPhase')} disabled={!transaction.jobName}>
-                        <SelectTrigger><SelectValue placeholder="Select job phase..." /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Select job phase..." /></SelectValue>
                         <SelectContent>
                             {availablePhases.map(phase => <SelectItem key={phase.phaseName} value={phase.phaseName}>{phase.phaseName}</SelectItem>)}
                         </SelectContent>
@@ -187,7 +188,7 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                 <div className="space-y-2">
                     <Label>Job Category</Label>
                     <Select value={transaction.jobCategory || ''} onValueChange={handleFieldChange('jobCategory')} disabled={!transaction.jobPhase}>
-                        <SelectTrigger><SelectValue placeholder="Select job category..." /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Select job category..." /></SelectValue>
                         <SelectContent>
                             {availableCategories.map(category => <SelectItem key={category.categoryName} value={category.categoryName}>{category.categoryName}</SelectItem>)}
                         </SelectContent>

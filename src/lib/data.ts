@@ -1,3 +1,4 @@
+
 export type TransactionStatus = 'Complete' | 'Needs Info' | 'Pending Sync';
 
 export type Transaction = {
@@ -116,14 +117,14 @@ export const transactions: Transaction[] = [
   },
 ];
 
-export const costCodes = [
-  '7210 - Software & Subscriptions',
-  '6450 - Meals & Entertainment',
-  '6290 - Office Supplies',
-  '7855 - Travel & Transportation',
-  '6120 - Advertising & Marketing',
-  '7100 - Rent & Lease',
-  '8000 - Professional Services',
+export const costCodes: CostCode[] = [
+  { id: '7210 - Software & Subscriptions', name: '7210 - Software & Subscriptions', status: 'Active' },
+  { id: '6450 - Meals & Entertainment', name: '6450 - Meals & Entertainment', status: 'Active' },
+  { id: '6290 - Office Supplies', name: '6290 - Office Supplies', status: 'Active' },
+  { id: '7855 - Travel & Transportation', name: '7855 - Travel & Transportation', status: 'Active' },
+  { id: '6120 - Advertising & Marketing', name: '6120 - Advertising & Marketing', status: 'Active' },
+  { id: '7100 - Rent & Lease', name: '7100 - Rent & Lease', status: 'Active' },
+  { id: '8000 - Professional Services', name: '8000 - Professional Services', status: 'Active' },
 ];
 
 export type AccountingField = {
@@ -156,3 +157,10 @@ export const accountingFields: AccountingField[] = [
   { jobId: 'client-sfo', jobName: 'Client Visit SFO', phaseId: 'sales', phaseName: 'Sales', categoryId: 'travel', categoryName: 'Travel' },
   { jobId: 'client-sfo', jobName: 'Client Visit SFO', phaseId: 'sales', phaseName: 'Sales', categoryId: 'meals', categoryName: 'Client Meals' },
 ];
+
+
+export type CostCode = {
+  id: string;
+  name: string;
+  status: 'Active' | 'Inactive';
+};

@@ -1,5 +1,8 @@
+
 import { CsvImporter } from "@/components/csv-importer";
+import { CostCodeImporter } from "@/components/cost-code-importer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 export default function SettingsPage() {
   return (
@@ -20,6 +23,18 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           <CsvImporter />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Import Chart of Accounts</CardTitle>
+          <CardDescription>
+            Upload a CSV file to update the list of available accounting codes.
+            The CSV must have the headers: Account, Name, Status.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CostCodeImporter />
         </CardContent>
       </Card>
     </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useTransition } from 'react';
@@ -12,7 +13,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from './ui/progress';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { costCodes } from '@/lib/data';
+import { useCostCodes } from '@/hooks/use-cost-codes';
+import { Skeleton } from './ui/skeleton';
 
 interface CostCodeSuggesterProps {
   transaction: Transaction;
@@ -24,6 +26,7 @@ export function CostCodeSuggester({ transaction, onUpdateCostCode }: CostCodeSug
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const { codes: costCodes, loading: loadingCodes } = useCostCodes();
 
   const handleSuggestion = () => {
     startTransition(async () => {
@@ -31,6 +34,7 @@ export function CostCodeSuggester({ transaction, onUpdateCostCode }: CostCodeSug
         const result = await getCostCodeSuggestion({
           transactionDescription: transaction.description,
           transactionAmount: transaction.amount,
+          previousCostCodes: costCodes.filter(c => c.status === 'Active').map(c => c.name)
         });
         setSuggestion(result);
       } catch (error) {
@@ -55,6 +59,10 @@ export function CostCodeSuggester({ transaction, onUpdateCostCode }: CostCodeSug
     onUpdateCostCode(transaction.id, value);
   };
 
+  if (loadingCodes) {
+    return <Skeleton className="h-10 w-full" />
+  }
+
   return (
     <div className="flex items-center gap-2 w-full">
       <Select value={transaction.accountingCode || ''} onValueChange={handleValueChange}>
@@ -62,7 +70,7 @@ export function CostCodeSuggester({ transaction, onUpdateCostCode }: CostCodeSug
           <SelectValue placeholder="Select accounting code..." />
         </SelectTrigger>
         <SelectContent>
-          {costCodes.map(code => <SelectItem key={code} value={code}>{code}</SelectItem>)}
+          {costCodes.filter(c => c.status === 'Active').map(code => <SelectItem key={code.id} value={code.name}>{code.name}</SelectItem>)}
         </SelectContent>
       </Select>
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
