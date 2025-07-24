@@ -170,7 +170,7 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                 <div className="space-y-2">
                     <Label>Job Name</Label>
                     <Select value={transaction.jobName || ''} onValueChange={handleFieldChange('jobName')}>
-                        <SelectTrigger><SelectValue placeholder="Select job name..." /></SelectValue>
+                        <SelectTrigger><SelectValue placeholder="Select job name..." /></SelectTrigger>
                         <SelectContent>
                             {availableJobs.map(job => <SelectItem key={job.jobName} value={job.jobName}>{job.jobName}</SelectItem>)}
                         </SelectContent>
@@ -179,7 +179,7 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                 <div className="space-y-2">
                     <Label>Job Phase</Label>
                     <Select value={transaction.jobPhase || ''} onValueChange={handleFieldChange('jobPhase')} disabled={!transaction.jobName}>
-                        <SelectTrigger><SelectValue placeholder="Select job phase..." /></SelectValue>
+                        <SelectTrigger><SelectValue placeholder="Select job phase..." /></SelectTrigger>
                         <SelectContent>
                             {availablePhases.map(phase => <SelectItem key={phase.phaseName} value={phase.phaseName}>{phase.phaseName}</SelectItem>)}
                         </SelectContent>
@@ -188,7 +188,7 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                 <div className="space-y-2">
                     <Label>Job Category</Label>
                     <Select value={transaction.jobCategory || ''} onValueChange={handleFieldChange('jobCategory')} disabled={!transaction.jobPhase}>
-                        <SelectTrigger><SelectValue placeholder="Select job category..." /></SelectValue>
+                        <SelectTrigger><SelectValue placeholder="Select job category..." /></SelectTrigger>
                         <SelectContent>
                             {availableCategories.map(category => <SelectItem key={category.categoryName} value={category.categoryName}>{category.categoryName}</SelectItem>)}
                         </SelectContent>
