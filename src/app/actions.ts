@@ -50,3 +50,13 @@ export async function saveCostCodesAction(codes: CostCode[]) {
     return { success: false, message: 'Failed to save chart of accounts.' };
   }
 }
+
+
+export async function syncWithRamp() {
+    // This is a placeholder for the real Ramp API integration.
+    // In a real application, this would fetch the latest data from Firestore
+    // and push it to the Ramp API.
+    console.log('syncWithRamp action triggered');
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
+    return { success: true, message: 'Data sync with Ramp initiated. (This is a placeholder)' };
+}

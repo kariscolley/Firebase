@@ -11,11 +11,36 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Link as LinkIcon, LogOut, Settings, User } from "lucide-react";
+import { Link as LinkIcon, LogOut, Settings, User, RefreshCw, Loader } from "lucide-react";
 import Link from "next/link";
+import { syncWithRamp } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function Header() {
+  const [isSyncing, setIsSyncing] = React.useState(false);
+  const { toast } = useToast();
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const result = await syncWithRamp();
+       if (result.success) {
+        toast({ title: 'Sync Initiated', description: result.message });
+      } else {
+        toast({ variant: 'destructive', title: 'Sync Failed', description: result.message });
+      }
+    } catch (error) {
+       toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'An unknown error occurred.',
+        });
+    } finally {
+        setIsSyncing(false);
+    }
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-sm">
       <div className="container flex h-16 items-center px-4 sm:px-6 md:px-8">
@@ -26,6 +51,10 @@ export default function Header() {
           <span className="font-headline text-lg font-bold">Ramp Link</span>
         </Link>
         <div className="flex flex-1 items-center justify-end gap-4">
+           <Button onClick={handleSync} disabled={isSyncing} variant="outline" size="sm">
+            {isSyncing ? <Loader className="mr-2 animate-spin" /> : <RefreshCw className="mr-2" />}
+            Sync with Ramp
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">

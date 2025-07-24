@@ -12,9 +12,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
 import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useCostCodes } from '@/hooks/use-cost-codes';
 import { Skeleton } from './ui/skeleton';
+import { Combobox } from './ui/combobox';
 
 interface CostCodeSuggesterProps {
   transaction: Transaction;
@@ -55,24 +55,30 @@ export function CostCodeSuggester({ transaction, onUpdateCostCode }: CostCodeSug
     }
   };
 
-  const handleValueChange = (value: string) => {
-    onUpdateCostCode(transaction.id, value);
+  const handleValueChange = (value: string | null) => {
+    if (value) {
+      onUpdateCostCode(transaction.id, value);
+    }
   };
 
   if (loadingCodes) {
     return <Skeleton className="h-10 w-full" />
   }
 
+  const activeCostCodes = costCodes.filter(c => c.status === 'Active').map(code => ({
+      value: `${code.account} - ${code.name}`,
+      label: `${code.account} - ${code.name}`
+  }));
+
   return (
     <div className="flex items-center gap-2 w-full">
-      <Select value={transaction.accountingCode || ''} onValueChange={handleValueChange}>
-        <SelectTrigger className="flex-grow">
-          <SelectValue placeholder="Select accounting code..." />
-        </SelectTrigger>
-        <SelectContent>
-          {costCodes.filter(c => c.status === 'Active').map(code => <SelectItem key={code.id} value={`${code.account} - ${code.name}`}>{`${code.account} - ${code.name}`}</SelectItem>)}
-        </SelectContent>
-      </Select>
+       <Combobox
+            options={activeCostCodes}
+            value={transaction.accountingCode || ''}
+            onValueChange={handleValueChange}
+            placeholder="Select accounting code..."
+            searchPlaceholder="Search codes..."
+        />
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger asChild>
           <Button

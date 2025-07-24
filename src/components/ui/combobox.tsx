@@ -43,7 +43,7 @@ export function Combobox({ options, value, onValueChange, placeholder, searchPla
           className="w-full justify-between"
           disabled={disabled}
         >
-          {selectedOption ? selectedOption.label : placeholder || "Select option..."}
+          <span className="truncate">{selectedOption ? selectedOption.label : placeholder || "Select option..."}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -56,9 +56,10 @@ export function Combobox({ options, value, onValueChange, placeholder, searchPla
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
-                  value={option.value}
-                  onSelect={(currentValue) => {
-                    onValueChange(currentValue === value ? null : currentValue)
+                  value={option.label}
+                  onSelect={(currentLabel) => {
+                    const selectedValue = options.find(opt => opt.label === currentLabel)?.value
+                    onValueChange(selectedValue === value ? null : selectedValue || null)
                     setOpen(false)
                   }}
                 >
