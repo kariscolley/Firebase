@@ -11,7 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UploadCloud, CheckCircle, Trash2, Search } from 'lucide-react';
-import { type Transaction, costCodes, jobNames, jobPhases, jobCategories } from '@/lib/data';
+import { type Transaction, costCodes, accountingFields } from '@/lib/data';
 import { CostCodeSuggester } from './cost-code-suggester';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
@@ -32,6 +32,26 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
+
+  // Derive available options from the selected values
+  const availableJobs = React.useMemo(() => {
+    return [...new Map(accountingFields.map(item => [item.jobName, item])).values()];
+  }, []);
+
+  const availablePhases = React.useMemo(() => {
+    if (!transaction.jobName) return [];
+    return accountingFields
+      .filter(f => f.jobName === transaction.jobName)
+      .filter((value, index, self) => self.findIndex(t => t.phaseName === value.phaseName) === index);
+  }, [transaction.jobName]);
+
+  const availableCategories = React.useMemo(() => {
+    if (!transaction.jobPhase) return [];
+     return accountingFields
+      .filter(f => f.jobName === transaction.jobName && f.phaseName === transaction.jobPhase)
+      .filter((value, index, self) => self.findIndex(t => t.categoryName === value.categoryName) === index);
+  }, [transaction.jobName, transaction.jobPhase]);
+
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -70,6 +90,15 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
 
   const handleFieldChange = (field: keyof Transaction) => (value: string) => {
     onUpdateField(transaction.id, field, value);
+
+    // Reset dependent fields if a parent changes
+    if (field === 'jobName') {
+        onUpdateField(transaction.id, 'jobPhase', null);
+        onUpdateField(transaction.id, 'jobCategory', null);
+    }
+    if (field === 'jobPhase') {
+        onUpdateField(transaction.id, 'jobCategory', null);
+    }
   }
 
   const handleCostCodeUpdate = (transactionId: string, newCostCode: string) => {
@@ -122,25 +151,25 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                     <Select value={transaction.jobName || ''} onValueChange={handleFieldChange('jobName')}>
                         <SelectTrigger><SelectValue placeholder="Select job name..." /></SelectTrigger>
                         <SelectContent>
-                            {jobNames.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+                            {availableJobs.map(job => <SelectItem key={job.jobName} value={job.jobName}>{job.jobName}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
                 <div className="space-y-2">
                     <Label>Job Phase</Label>
-                    <Select value={transaction.jobPhase || ''} onValueChange={handleFieldChange('jobPhase')}>
+                    <Select value={transaction.jobPhase || ''} onValueChange={handleFieldChange('jobPhase')} disabled={!transaction.jobName}>
                         <SelectTrigger><SelectValue placeholder="Select job phase..." /></SelectTrigger>
                         <SelectContent>
-                            {jobPhases.map(phase => <SelectItem key={phase} value={phase}>{phase}</SelectItem>)}
+                            {availablePhases.map(phase => <SelectItem key={phase.phaseName} value={phase.phaseName}>{phase.phaseName}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
                 <div className="space-y-2">
                     <Label>Job Category</Label>
-                    <Select value={transaction.jobCategory || ''} onValueChange={handleFieldChange('jobCategory')}>
+                    <Select value={transaction.jobCategory || ''} onValueChange={handleFieldChange('jobCategory')} disabled={!transaction.jobPhase}>
                         <SelectTrigger><SelectValue placeholder="Select job category..." /></SelectTrigger>
                         <SelectContent>
-                            {jobCategories.map(category => <SelectItem key={category} value={category}>{category}</SelectItem>)}
+                            {availableCategories.map(category => <SelectItem key={category.categoryName} value={category.categoryName}>{category.categoryName}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>

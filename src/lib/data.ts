@@ -25,8 +25,8 @@ export const transactions: Transaction[] = [
     accountingCode: null,
     memo: 'Monthly cloud hosting',
     jobName: 'Project Titan',
-    jobPhase: 'Infrastructure',
-    jobCategory: 'Cloud Services',
+    jobPhase: null,
+    jobCategory: null,
     receiptUrl: null,
     description: 'AWS monthly hosting fees for production servers.',
   },
@@ -126,27 +126,33 @@ export const costCodes = [
   '8000 - Professional Services',
 ];
 
-export const jobNames = [
-    'Project Titan',
-    'Company-wide',
-    'HQ Maintenance',
-    'Team Building',
-    'Client Visit SFO',
-];
+export type AccountingField = {
+  jobId: string;
+  jobName: string;
+  phaseId: string;
+  phaseName: string;
+  categoryId: string;
+  categoryName: string;
+};
 
-export const jobPhases = [
-    'Infrastructure',
-    'Design',
-    'Q3',
-    'Communications',
-    'Sales',
-    'Development',
-];
+export const accountingFields: AccountingField[] = [
+  // Project Titan
+  { jobId: 'titan', jobName: 'Project Titan', phaseId: 'infra', phaseName: 'Infrastructure', categoryId: 'cloud', categoryName: 'Cloud Services' },
+  { jobId: 'titan', jobName: 'Project Titan', phaseId: 'dev', phaseName: 'Development', categoryId: 'software', categoryName: 'Software' },
+  { jobId: 'titan', jobName: 'Project Titan', phaseId: 'dev', phaseName: 'Development', categoryId: 'ci-cd', categoryName: 'CI/CD' },
+  
+  // Company-wide
+  { jobId: 'comp', jobName: 'Company-wide', phaseId: 'design', phaseName: 'Design', categoryId: 'software', categoryName: 'Software' },
+  { jobId: 'comp', jobName: 'Company-wide', phaseId: 'comm', phaseName: 'Communications', categoryId: 'software', categoryName: 'Software' },
 
-export const jobCategories = [
-    'Cloud Services',
-    'Software',
-    'Facilities',
-    'Employee Morale',
-    'Travel',
+  // HQ Maintenance
+  { jobId: 'hq', jobName: 'HQ Maintenance', phaseId: 'q3', phaseName: 'Q3', categoryId: 'facilities', categoryName: 'Facilities' },
+  { jobId: 'hq', jobName: 'HQ Maintenance', phaseId: 'q4', phaseName: 'Q4', categoryId: 'facilities', categoryName: 'Facilities' },
+
+  // Team Building
+  { jobId: 'team', jobName: 'Team Building', phaseId: 'q3', phaseName: 'Q3', categoryId: 'morale', categoryName: 'Employee Morale' },
+
+  // Client Visit
+  { jobId: 'client-sfo', jobName: 'Client Visit SFO', phaseId: 'sales', phaseName: 'Sales', categoryId: 'travel', categoryName: 'Travel' },
+  { jobId: 'client-sfo', jobName: 'Client Visit SFO', phaseId: 'sales', phaseName: 'Sales', categoryId: 'meals', categoryName: 'Client Meals' },
 ];
