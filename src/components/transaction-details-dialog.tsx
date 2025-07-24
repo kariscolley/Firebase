@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { UploadCloud, CheckCircle, Trash2, Search } from 'lucide-react';
+import { UploadCloud, CheckCircle, Trash2, Search, Loader } from 'lucide-react';
 import { type Transaction, costCodes } from '@/lib/data';
 import { useAccountingFields } from '@/hooks/use-accounting-fields';
 import { CostCodeSuggester } from './cost-code-suggester';
@@ -21,6 +21,7 @@ import Image from 'next/image';
 import { ImageLightbox } from './image-lightbox';
 import { format, parseISO } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Skeleton } from './ui/skeleton';
 
 interface TransactionDetailsDialogProps {
     transaction: Transaction;
@@ -33,7 +34,7 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
-  const accountingFields = useAccountingFields();
+  const { fields: accountingFields, loading: loadingFields } = useAccountingFields();
 
   // Derive available options from the selected values
   const availableJobs = React.useMemo(() => {
@@ -148,6 +149,23 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                     <Label>Memo</Label>
                     <Input value={transaction.memo || ''} onChange={(e) => onUpdateField(transaction.id, 'memo', e.target.value)} placeholder="Enter memo..."/>
                 </div>
+                { loadingFields ? (
+                   <div className="space-y-4">
+                      <div className="space-y-2">
+                          <Label>Job Name</Label>
+                          <Skeleton className="h-10 w-full" />
+                      </div>
+                       <div className="space-y-2">
+                          <Label>Job Phase</Label>
+                          <Skeleton className="h-10 w-full" />
+                      </div>
+                       <div className="space-y-2">
+                          <Label>Job Category</Label>
+                          <Skeleton className="h-10 w-full" />
+                      </div>
+                   </div>
+                ) : (
+                <>
                 <div className="space-y-2">
                     <Label>Job Name</Label>
                     <Select value={transaction.jobName || ''} onValueChange={handleFieldChange('jobName')}>
@@ -175,6 +193,8 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                         </SelectContent>
                     </Select>
                 </div>
+                </>
+                )}
               </div>
               <DialogClose asChild>
                 <Button className="w-full mt-auto">

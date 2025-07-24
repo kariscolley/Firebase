@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import Papa from 'papaparse';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { ScrollArea } from './ui/scroll-area';
-import { UploadCloud, CheckCircle } from 'lucide-react';
+import { UploadCloud, CheckCircle, Loader } from 'lucide-react';
 import { type AccountingField } from '@/lib/data';
+import { saveAccountingFields } from '@/services/accounting-fields';
 
 interface CsvRow {
   [key: string]: string;
@@ -17,6 +18,7 @@ interface CsvRow {
 export function CsvImporter() {
   const [file, setFile] = useState<File | null>(null);
   const [data, setData] = useState<AccountingField[]>([]);
+  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,19 +81,21 @@ export function CsvImporter() {
   };
 
   const handleSaveChanges = () => {
-    try {
-        localStorage.setItem('accountingFields', JSON.stringify(data));
+    startTransition(async () => {
+       try {
+        await saveAccountingFields(data);
         toast({
             title: 'Changes Saved',
-            description: 'The new accounting fields have been saved and will be used across the app.',
+            description: 'The new accounting fields have been saved to the database.',
         });
     } catch (error) {
          toast({
           variant: 'destructive',
           title: 'Failed to Save',
-          description: 'Could not save the accounting fields to local storage.',
+          description: 'Could not save the accounting fields to the database.',
         });
     }
+    })
   }
 
   return (
@@ -132,8 +136,12 @@ export function CsvImporter() {
               </TableBody>
             </Table>
           </ScrollArea>
-           <Button onClick={handleSaveChanges} className="w-full">
-            <CheckCircle className="mr-2 h-4 w-4" />
+           <Button onClick={handleSaveChanges} className="w-full" disabled={isPending}>
+            {isPending ? (
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                <CheckCircle className="mr-2 h-4 w-4" />
+            )}
             Save Changes
           </Button>
         </div>

@@ -2,39 +2,34 @@
 
 import { useState, useEffect } from 'react';
 import { accountingFields as defaultAccountingFields, type AccountingField } from '@/lib/data';
+import { getAccountingFields, onAccountingFieldsUpdate } from '@/services/accounting-fields';
 
 export function useAccountingFields() {
-  const [fields, setFields] = useState<AccountingField[]>(defaultAccountingFields);
+  const [fields, setFields] = useState<AccountingField[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedFields = localStorage.getItem('accountingFields');
-      if (storedFields) {
-        setFields(JSON.parse(storedFields));
-      }
-    } catch (error) {
-      console.error("Failed to parse accounting fields from localStorage", error);
-      // Fallback to default fields if parsing fails
-      setFields(defaultAccountingFields);
-    }
+    // Fetch initial data
+    getAccountingFields()
+      .then(initialFields => {
+        setFields(initialFields.length > 0 ? initialFields : defaultAccountingFields);
+      })
+      .catch(error => {
+        console.error("Failed to fetch accounting fields from Firestore", error);
+        setFields(defaultAccountingFields); // Fallback to default
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
-    const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === 'accountingFields' && event.newValue) {
-            try {
-                setFields(JSON.parse(event.newValue));
-            } catch (error) {
-                console.error("Failed to parse updated accounting fields from localStorage", error);
-            }
-        }
-    }
+    // Subscribe to real-time updates
+    const unsubscribe = onAccountingFieldsUpdate((updatedFields) => {
+       setFields(updatedFields.length > 0 ? updatedFields : defaultAccountingFields);
+    });
 
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-        window.removeEventListener('storage', handleStorageChange);
-    }
-
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
-  return fields;
+  return { fields, loading };
 }
