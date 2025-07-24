@@ -18,12 +18,8 @@ import {
 } from '@/components/ui/dialog';
 import { TransactionDetailsDialog } from './transaction-details-dialog';
 import { Input } from './ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Button } from './ui/button';
-import { Calendar } from './ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Search, SlidersHorizontal, Calendar as CalendarIcon, X } from 'lucide-react';
-import { DateRange } from 'react-day-picker';
+import { Search, ArrowUpDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -33,14 +29,14 @@ const statusStyles: { [key in TransactionStatus]: string } = {
   'Pending Sync': 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800',
 };
 
-const statusOptions: TransactionStatus[] = ['Needs Info', 'Pending Sync', 'Complete'];
+type SortKey = keyof Transaction | null;
 
 export function TransactionTable() {
   const [transactions, setTransactions] = React.useState<Transaction[]>(initialTransactions);
   const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction | null>(null);
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [statusFilter, setStatusFilter] = React.useState<TransactionStatus | 'all'>('all');
-  const [dateFilter, setDateFilter] = React.useState<DateRange | undefined>(undefined);
+  const [sortConfig, setSortConfig] = React.useState<{ key: SortKey; direction: 'ascending' | 'descending' }>({ key: 'date', direction: 'descending' });
+
 
   const handleFieldUpdate = (transactionId: string, field: keyof Transaction, value: string | null) => {
     setTransactions(prev =>
@@ -94,94 +90,73 @@ export function TransactionTable() {
     reader.readAsDataURL(file);
   };
 
-  const filteredTransactions = transactions.filter(transaction => {
-    const searchTermLower = searchTerm.toLowerCase();
-    const matchesSearch =
-      transaction.vendor.toLowerCase().includes(searchTermLower) ||
-      transaction.description.toLowerCase().includes(searchTermLower);
-    
-    const matchesStatus =
-      statusFilter === 'all' || transaction.status === statusFilter;
+  const requestSort = (key: keyof Transaction) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
-    const transactionDate = parseISO(transaction.date);
-    const matchesDate = 
-      !dateFilter ||
-      (dateFilter.from && !dateFilter.to && transactionDate >= dateFilter.from) ||
-      (dateFilter.from && dateFilter.to && transactionDate >= dateFilter.from && transactionDate <= dateFilter.to);
+  const getSortIndicator = (key: keyof Transaction) => {
+    if (sortConfig.key !== key) {
+      return <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-50" />;
+    }
+    if (sortConfig.direction === 'ascending') {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
+    return <ArrowUpDown className="ml-2 h-4 w-4" />;
+  };
 
-    return matchesSearch && matchesStatus && matchesDate;
-  });
+  const sortedAndFilteredTransactions = React.useMemo(() => {
+    let sortableItems = [...transactions];
+
+    sortableItems = sortableItems.filter(transaction => {
+      const searchTermLower = searchTerm.toLowerCase();
+      return transaction.vendor.toLowerCase().includes(searchTermLower) ||
+             transaction.description.toLowerCase().includes(searchTermLower) ||
+             (transaction.accountingCode && transaction.accountingCode.toLowerCase().includes(searchTermLower));
+    });
+
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        const aValue = a[sortConfig.key!];
+        const bValue = b[sortConfig.key!];
+
+        if (aValue === null || bValue === null) {
+            if (aValue === bValue) return 0;
+            return aValue === null ? 1 : -1;
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return sortableItems;
+  }, [transactions, searchTerm, sortConfig]);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Transactions</CardTitle>
         <CardDescription>
-          Review transactions that require a cost code or receipt.
+          Review transactions that require a cost code or receipt. Click headers to sort.
         </CardDescription>
         <div className="flex items-center gap-2 pt-4">
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search"
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
-          </div>
-          <div className='flex items-center gap-2'>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  id="date"
-                  variant={"outline"}
-                  className={cn(
-                    "w-[260px] justify-start text-left font-normal",
-                    !dateFilter && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateFilter?.from ? (
-                    dateFilter.to ? (
-                      <>
-                        {format(dateFilter.from, "LLL dd, y")} -{" "}
-                        {format(dateFilter.to, "LLL dd, y")}
-                      </>
-                    ) : (
-                      format(dateFilter.from, "LLL dd, y")
-                    )
-                  ) : (
-                    <span>Filter by date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-                {dateFilter && (
-                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setDateFilter(undefined)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={dateFilter?.from}
-                  selected={dateFilter}
-                  onSelect={setDateFilter}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
-            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as TransactionStatus | 'all')}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                {statusOptions.map(status => (
-                  <SelectItem key={status} value={status}>{status}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
       </CardHeader>
@@ -190,14 +165,34 @@ export function TransactionTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[350px]">Transaction</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead className="w-[350px]">
+                   <Button variant="ghost" onClick={() => requestSort('vendor')} className="px-0">
+                    Transaction
+                    {getSortIndicator('vendor')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => requestSort('date')} className="px-0">
+                    Date
+                    {getSortIndicator('date')}
+                  </Button>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Button variant="ghost" onClick={() => requestSort('amount')} className="px-0">
+                    Amount
+                    {getSortIndicator('amount')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => requestSort('status')} className="px-0">
+                    Status
+                    {getSortIndicator('status')}
+                  </Button>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTransactions.map(transaction => (
+              {sortedAndFilteredTransactions.map(transaction => (
                  <Dialog key={transaction.id} onOpenChange={(isOpen) => {
                     if (!isOpen) {
                         setSelectedTransaction(null)
