@@ -11,7 +11,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UploadCloud, CheckCircle, Trash2, Search } from 'lucide-react';
-import { type Transaction, costCodes, accountingFields } from '@/lib/data';
+import { type Transaction, costCodes } from '@/lib/data';
+import { useAccountingFields } from '@/hooks/use-accounting-fields';
 import { CostCodeSuggester } from './cost-code-suggester';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
@@ -32,25 +33,26 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
+  const accountingFields = useAccountingFields();
 
   // Derive available options from the selected values
   const availableJobs = React.useMemo(() => {
     return [...new Map(accountingFields.map(item => [item.jobName, item])).values()];
-  }, []);
+  }, [accountingFields]);
 
   const availablePhases = React.useMemo(() => {
     if (!transaction.jobName) return [];
     return accountingFields
       .filter(f => f.jobName === transaction.jobName)
       .filter((value, index, self) => self.findIndex(t => t.phaseName === value.phaseName) === index);
-  }, [transaction.jobName]);
+  }, [transaction.jobName, accountingFields]);
 
   const availableCategories = React.useMemo(() => {
     if (!transaction.jobPhase) return [];
      return accountingFields
       .filter(f => f.jobName === transaction.jobName && f.phaseName === transaction.jobPhase)
       .filter((value, index, self) => self.findIndex(t => t.categoryName === value.categoryName) === index);
-  }, [transaction.jobName, transaction.jobPhase]);
+  }, [transaction.jobName, transaction.jobPhase, accountingFields]);
 
 
   const handleUploadClick = () => {
