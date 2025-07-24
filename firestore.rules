@@ -2,16 +2,15 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Allow anyone to read configuration, but only authenticated users to write.
-    match /configuration/{docId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-    
-    // Lock down all other collections
+    // By default, deny all reads and writes
     match /{document=**} {
       allow read, write: if false;
+    }
+
+    // Allow authenticated users to read and write to the configuration collection
+    match /configuration/{docId} {
+      allow read: if true; // Allow anyone to read configuration
+      allow write: if request.auth != null; // Only authenticated users can write
     }
   }
 }

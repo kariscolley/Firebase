@@ -11,7 +11,7 @@ import { UploadCloud, CheckCircle, Loader } from 'lucide-react';
 import { type AccountingField } from '@/lib/data';
 import { saveAccountingFields } from '@/services/accounting-fields';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, type User } from 'firebase/auth';
+import { onAuthStateChanged, signInAnonymously, type User } from 'firebase/auth';
 
 
 interface CsvRow {
@@ -26,11 +26,29 @@ export function CsvImporter() {
   const { toast } = useToast();
 
   useEffect(() => {
+    const signIn = async () => {
+        try {
+            await signInAnonymously(auth);
+        } catch (error) {
+            console.error("Anonymous sign-in failed", error);
+             toast({
+                variant: 'destructive',
+                title: 'Authentication Failed',
+                description: 'Could not authenticate with the server. Please refresh the page.',
+            });
+        }
+    }
+
+    if (!auth.currentUser) {
+        signIn();
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
     });
+
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
