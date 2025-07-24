@@ -118,13 +118,13 @@ export const transactions: Transaction[] = [
 ];
 
 export const costCodes: CostCode[] = [
-  { id: '7210 - Software & Subscriptions', name: '7210 - Software & Subscriptions', status: 'Active' },
-  { id: '6450 - Meals & Entertainment', name: '6450 - Meals & Entertainment', status: 'Active' },
-  { id: '6290 - Office Supplies', name: '6290 - Office Supplies', status: 'Active' },
-  { id: '7855 - Travel & Transportation', name: '7855 - Travel & Transportation', status: 'Active' },
-  { id: '6120 - Advertising & Marketing', name: '6120 - Advertising & Marketing', status: 'Active' },
-  { id: '7100 - Rent & Lease', name: '7100 - Rent & Lease', status: 'Active' },
-  { id: '8000 - Professional Services', name: '8000 - Professional Services', status: 'Active' },
+  { id: '7210', account: '7210', name: 'Software & Subscriptions', status: 'Active' },
+  { id: '6450', account: '6450', name: 'Meals & Entertainment', status: 'Active' },
+  { id: '6290', account: '6290', name: 'Office Supplies', status: 'Active' },
+  { id: '7855', account: '7855', name: 'Travel & Transportation', status: 'Active' },
+  { id: '6120', account: '6120', name: 'Advertising & Marketing', status: 'Active' },
+  { id: '7100', account: '7100', name: 'Rent & Lease', status: 'Active' },
+  { id: '8000', account: '8000', name: 'Professional Services', status: 'Active' },
 ];
 
 export type AccountingField = {
@@ -161,6 +161,7 @@ export const accountingFields: AccountingField[] = [
 
 export type CostCode = {
   id: string;
+  account: string;
   name: string;
   status: 'Active' | 'Inactive';
 };

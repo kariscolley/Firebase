@@ -57,8 +57,9 @@ export function CostCodeImporter() {
         }
 
         const parsedData = (results.data as CsvRow[]).map(row => ({
-          id: `${row['Account']} - ${row['Name']}`,
-          name: `${row['Account']} - ${row['Name']}`,
+          id: row['Account'],
+          account: row['Account'],
+          name: row['Name'],
           status: row['Status'] === 'Active' ? 'Active' : 'Inactive',
         }));
         
@@ -121,7 +122,7 @@ export function CostCodeImporter() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
+                  <TableHead>Account</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
@@ -129,7 +130,7 @@ export function CostCodeImporter() {
               <TableBody>
                 {data.map((row, rowIndex) => (
                   <TableRow key={rowIndex}>
-                    <TableCell>{row.id}</TableCell>
+                    <TableCell>{row.account}</TableCell>
                     <TableCell>{row.name}</TableCell>
                     <TableCell>{row.status}</TableCell>
                   </TableRow>

@@ -34,7 +34,7 @@ export function CostCodeSuggester({ transaction, onUpdateCostCode }: CostCodeSug
         const result = await getCostCodeSuggestion({
           transactionDescription: transaction.description,
           transactionAmount: transaction.amount,
-          previousCostCodes: costCodes.filter(c => c.status === 'Active').map(c => c.name)
+          previousCostCodes: costCodes.filter(c => c.status === 'Active').map(c => `${c.account} - ${c.name}`)
         });
         setSuggestion(result);
       } catch (error) {
@@ -70,7 +70,7 @@ export function CostCodeSuggester({ transaction, onUpdateCostCode }: CostCodeSug
           <SelectValue placeholder="Select accounting code..." />
         </SelectTrigger>
         <SelectContent>
-          {costCodes.filter(c => c.status === 'Active').map(code => <SelectItem key={code.id} value={code.name}>{code.name}</SelectItem>)}
+          {costCodes.filter(c => c.status === 'Active').map(code => <SelectItem key={code.id} value={`${code.account} - ${code.name}`}>{`${code.account} - ${code.name}`}</SelectItem>)}
         </SelectContent>
       </Select>
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
