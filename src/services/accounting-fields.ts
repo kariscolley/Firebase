@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { type AccountingField } from '@/lib/data';
 
 const ACCOUNTING_FIELDS_COLLECTION = 'configuration';
@@ -45,26 +45,4 @@ export async function getAccountingFields(): Promise<AccountingField[]> {
     console.error("Error fetching accounting fields from Firestore:", error);
     throw new Error("Failed to fetch accounting fields.");
   }
-}
-
-/**
- * Subscribes to real-time updates of the accounting fields in Firestore.
- * @param callback - A function to be called with the updated fields whenever they change.
- * @returns A function to unsubscribe from the updates.
- */
-export function onAccountingFieldsUpdate(callback: (fields: AccountingField[]) => void): () => void {
-    const docRef = doc(db, ACCOUNTING_FIELDS_COLLECTION, ACCOUNTING_FIELDS_DOCUMENT);
-    
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            callback(data.fields || []);
-        } else {
-            callback([]);
-        }
-    }, (error) => {
-        console.error("Error listening to accounting fields updates:", error);
-    });
-
-    return unsubscribe;
 }
