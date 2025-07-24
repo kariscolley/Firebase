@@ -6,10 +6,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileUp, Receipt, UploadCloud, Image as ImageIcon } from 'lucide-react';
+import { UploadCloud, CheckCircle } from 'lucide-react';
 import { type Transaction } from '@/lib/data';
 import { CostCodeSuggester } from './cost-code-suggester';
 import { Label } from './ui/label';
@@ -78,7 +79,7 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
         <DialogDescription>{transaction.description}</DialogDescription>
       </DialogHeader>
       <div className="grid md:grid-cols-2 gap-8 py-4">
-        <div className="space-y-6">
+        <div className="flex flex-col space-y-6">
             <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                     <p className="font-medium text-muted-foreground">Amount</p>
@@ -96,7 +97,7 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                 </div>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-4 flex-grow">
               <div className="space-y-2">
                   <Label htmlFor="accountingCode">Accounting Code</Label>
                   <CostCodeSuggester transaction={transaction} onUpdateCostCode={handleCostCodeUpdate} />
@@ -118,11 +119,17 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                   <Input id="jobCategory" value={transaction.jobCategory || ''} onChange={handleFieldChange('jobCategory')} placeholder="Enter job category..."/>
               </div>
             </div>
+            <DialogClose asChild>
+              <Button className="w-full mt-auto">
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Submit
+              </Button>
+            </DialogClose>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 flex flex-col">
             <Label>Receipt</Label>
             {transaction.receiptUrl ? (
-                <div className='relative group border rounded-lg overflow-hidden aspect-[2/3]'>
+                <div className='relative group border rounded-lg overflow-hidden h-full'>
                     <a href={transaction.receiptUrl} target="_blank" rel="noopener noreferrer">
                       <Image 
                         src={transaction.receiptUrl} 
@@ -145,7 +152,7 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                     onDragOver={handleDragEvents}
                     onDrop={handleDrop}
                     className={cn(
-                        "flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 text-center cursor-pointer h-full transition-colors",
+                        "flex flex-col flex-grow items-center justify-center border-2 border-dashed rounded-lg p-8 text-center cursor-pointer h-full transition-colors",
                         "text-muted-foreground hover:text-primary hover:border-primary",
                         isDragging && "bg-accent border-primary"
                     )}
