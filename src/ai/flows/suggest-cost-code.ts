@@ -50,7 +50,7 @@ export async function suggestCostCode(
 const prompt = ai.definePrompt({
   name: 'suggestCostCodePrompt',
   input: {schema: SuggestCostCodeInputSchema},
-  output: {schema: SuggestCostCode_OutputSchema},
+  output: {schema: SuggestCostCodeOutputSchema},
   prompt: `You are an expert accounting assistant specializing in accounting code assignment.
 
 You will be provided with transaction details and must suggest the most appropriate accounting code.
