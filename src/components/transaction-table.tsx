@@ -17,6 +17,9 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { TransactionDetailsDialog } from './transaction-details-dialog';
+import { Input } from './ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Search, SlidersHorizontal } from 'lucide-react';
 
 const statusStyles: { [key in TransactionStatus]: string } = {
   'Complete': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800',
@@ -24,17 +27,24 @@ const statusStyles: { [key in TransactionStatus]: string } = {
   'Pending Sync': 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800',
 };
 
+const statusOptions: TransactionStatus[] = ['Needs Info', 'Pending Sync', 'Complete'];
+
 export function TransactionTable() {
   const [transactions, setTransactions] = React.useState<Transaction[]>(initialTransactions);
   const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction | null>(null);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState<TransactionStatus | 'all'>('all');
 
-  const handleFieldUpdate = (transactionId: string, field: keyof Transaction, value: string) => {
+  const handleFieldUpdate = (transactionId: string, field: keyof Transaction, value: string | null) => {
     setTransactions(prev =>
       prev.map(t => {
         if (t.id === transactionId) {
           const updatedTransaction = { ...t, [field]: value };
-          const isComplete = updatedTransaction.accountingCode && updatedTransaction.receiptUrl;
-          return { ...updatedTransaction, status: isComplete ? "Pending Sync" : "Needs Info" };
+          if (field === 'accountingCode' || field === 'receiptUrl') {
+            const isComplete = updatedTransaction.accountingCode && updatedTransaction.receiptUrl;
+            return { ...updatedTransaction, status: isComplete ? "Pending Sync" : "Needs Info" };
+          }
+          return updatedTransaction;
         }
         return t;
       })
@@ -44,8 +54,11 @@ export function TransactionTable() {
       setSelectedTransaction(prev => {
         if (!prev) return null;
         const updatedTransaction = { ...prev, [field]: value };
-        const isComplete = updatedTransaction.accountingCode && updatedTransaction.receiptUrl;
-        return { ...updatedTransaction, status: isComplete ? "Pending Sync" : "Needs Info" };
+        if (field === 'accountingCode' || field === 'receiptUrl') {
+          const isComplete = updatedTransaction.accountingCode && updatedTransaction.receiptUrl;
+          return { ...updatedTransaction, status: isComplete ? "Pending Sync" : "Needs Info" };
+        }
+        return updatedTransaction;
       });
     }
   };
@@ -74,6 +87,19 @@ export function TransactionTable() {
     reader.readAsDataURL(file);
   };
 
+  const filteredTransactions = transactions.filter(transaction => {
+    const searchTermLower = searchTerm.toLowerCase();
+    const matchesSearch =
+      transaction.vendor.toLowerCase().includes(searchTermLower) ||
+      transaction.description.toLowerCase().includes(searchTermLower) ||
+      transaction.amount.toString().includes(searchTermLower);
+    
+    const matchesStatus =
+      statusFilter === 'all' || transaction.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <Card>
       <CardHeader>
@@ -81,6 +107,31 @@ export function TransactionTable() {
         <CardDescription>
           Review transactions that require a cost code or receipt.
         </CardDescription>
+        <div className="flex items-center gap-4 pt-4">
+          <div className="relative flex-grow">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search transactions..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+             <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as TransactionStatus | 'all')}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                {statusOptions.map(status => (
+                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -94,8 +145,12 @@ export function TransactionTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map(transaction => (
-                 <Dialog key={transaction.id} onOpenChange={(isOpen) => !isOpen && setSelectedTransaction(null)}>
+              {filteredTransactions.map(transaction => (
+                 <Dialog key={transaction.id} onOpenChange={(isOpen) => {
+                    if (!isOpen) {
+                        setSelectedTransaction(null)
+                    }
+                 }}>
                   <DialogTrigger asChild>
                     <TableRow 
                       onClick={() => setSelectedTransaction(transaction)} 
