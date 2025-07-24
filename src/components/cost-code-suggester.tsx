@@ -2,7 +2,6 @@
 
 import React, { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Loader, Sparkles, CheckCircle } from 'lucide-react';
 import { getCostCodeSuggestion } from '@/app/actions';
@@ -12,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
 import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { costCodes } from '@/lib/data';
 
 interface CostCodeSuggesterProps {
   transaction: Transaction;
@@ -19,7 +20,6 @@ interface CostCodeSuggesterProps {
 }
 
 export function CostCodeSuggester({ transaction, onUpdateCostCode }: CostCodeSuggesterProps) {
-  const [inputValue, setInputValue] = useState(transaction.accountingCode || '');
   const [suggestion, setSuggestion] = useState<SuggestCostCodeOutput | null>(null);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -46,26 +46,25 @@ export function CostCodeSuggester({ transaction, onUpdateCostCode }: CostCodeSug
 
   const handleApplySuggestion = () => {
     if (suggestion) {
-      setInputValue(suggestion.suggestedCostCode);
       onUpdateCostCode(transaction.id, suggestion.suggestedCostCode);
       setIsPopoverOpen(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-    onUpdateCostCode(transaction.id, e.target.value);
-  }
+  const handleValueChange = (value: string) => {
+    onUpdateCostCode(transaction.id, value);
+  };
 
   return (
     <div className="flex items-center gap-2 w-full">
-      <Input
-        type="text"
-        value={inputValue}
-        onChange={handleInputChange}
-        placeholder="Enter accounting code..."
-        className="flex-grow"
-      />
+      <Select value={transaction.accountingCode || ''} onValueChange={handleValueChange}>
+        <SelectTrigger className="flex-grow">
+          <SelectValue placeholder="Select accounting code..." />
+        </SelectTrigger>
+        <SelectContent>
+          {costCodes.map(code => <SelectItem key={code} value={code}>{code}</SelectItem>)}
+        </SelectContent>
+      </Select>
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger asChild>
           <Button

@@ -11,7 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UploadCloud, CheckCircle, Trash2, Search } from 'lucide-react';
-import { type Transaction } from '@/lib/data';
+import { type Transaction, costCodes, jobNames, jobPhases, jobCategories } from '@/lib/data';
 import { CostCodeSuggester } from './cost-code-suggester';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { ImageLightbox } from './image-lightbox';
 import { format, parseISO } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface TransactionDetailsDialogProps {
     transaction: Transaction;
@@ -67,8 +68,8 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
     }
   };
 
-  const handleFieldChange = (field: keyof Transaction) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    onUpdateField(transaction.id, field, e.target.value);
+  const handleFieldChange = (field: keyof Transaction) => (value: string) => {
+    onUpdateField(transaction.id, field, value);
   }
 
   const handleCostCodeUpdate = (transactionId: string, newCostCode: string) => {
@@ -109,24 +110,39 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
               
               <div className="space-y-4 flex-grow">
                 <div className="space-y-2">
-                    <Label htmlFor="accountingCode">Accounting Code</Label>
+                    <Label>Accounting Code</Label>
                     <CostCodeSuggester transaction={transaction} onUpdateCostCode={handleCostCodeUpdate} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="memo">Memo</Label>
-                    <Input id="memo" value={transaction.memo || ''} onChange={handleFieldChange('memo')} placeholder="Enter memo..."/>
+                    <Label>Memo</Label>
+                    <Input value={transaction.memo || ''} onChange={(e) => onUpdateField(transaction.id, 'memo', e.target.value)} placeholder="Enter memo..."/>
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="jobName">Job Name</Label>
-                    <Input id="jobName" value={transaction.jobName || ''} onChange={handleFieldChange('jobName')} placeholder="Enter job name..."/>
+                    <Label>Job Name</Label>
+                    <Select value={transaction.jobName || ''} onValueChange={handleFieldChange('jobName')}>
+                        <SelectTrigger><SelectValue placeholder="Select job name..." /></SelectTrigger>
+                        <SelectContent>
+                            {jobNames.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="jobPhase">Job Phase</Label>
-                    <Input id="jobPhase" value={transaction.jobPhase || ''} onChange={handleFieldChange('jobPhase')} placeholder="Enter job phase..."/>
+                    <Label>Job Phase</Label>
+                    <Select value={transaction.jobPhase || ''} onValueChange={handleFieldChange('jobPhase')}>
+                        <SelectTrigger><SelectValue placeholder="Select job phase..." /></SelectTrigger>
+                        <SelectContent>
+                            {jobPhases.map(phase => <SelectItem key={phase} value={phase}>{phase}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="jobCategory">Job Category</Label>
-                    <Input id="jobCategory" value={transaction.jobCategory || ''} onChange={handleFieldChange('jobCategory')} placeholder="Enter job category..."/>
+                    <Label>Job Category</Label>
+                    <Select value={transaction.jobCategory || ''} onValueChange={handleFieldChange('jobCategory')}>
+                        <SelectTrigger><SelectValue placeholder="Select job category..." /></SelectTrigger>
+                        <SelectContent>
+                            {jobCategories.map(category => <SelectItem key={category} value={category}>{category}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                 </div>
               </div>
               <DialogClose asChild>

@@ -41,7 +41,7 @@ export const transactions: Transaction[] = [
     jobName: 'Company-wide',
     jobPhase: 'Design',
     jobCategory: 'Software',
-    receiptUrl: '/receipts/figma.pdf',
+    receiptUrl: 'https://placehold.co/100x150.png',
     description: 'Annual subscription for design team.',
   },
   {
@@ -83,7 +83,7 @@ export const transactions: Transaction[] = [
     jobName: 'Company-wide',
     jobPhase: 'Communications',
     jobCategory: 'Software',
-    receiptUrl: '/receipts/slack.pdf',
+    receiptUrl: 'https://placehold.co/100x150.png',
     description: 'Monthly Slack subscription.',
   },
   {
@@ -124,4 +124,29 @@ export const costCodes = [
   '6120 - Advertising & Marketing',
   '7100 - Rent & Lease',
   '8000 - Professional Services',
+];
+
+export const jobNames = [
+    'Project Titan',
+    'Company-wide',
+    'HQ Maintenance',
+    'Team Building',
+    'Client Visit SFO',
+];
+
+export const jobPhases = [
+    'Infrastructure',
+    'Design',
+    'Q3',
+    'Communications',
+    'Sales',
+    'Development',
+];
+
+export const jobCategories = [
+    'Cloud Services',
+    'Software',
+    'Facilities',
+    'Employee Morale',
+    'Travel',
 ];
