@@ -6,23 +6,23 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  Dialog,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileUp, Receipt } from 'lucide-react';
 import { type Transaction } from '@/lib/data';
 import { CostCodeSuggester } from './cost-code-suggester';
+import { Label } from './ui/label';
+import { Input } from './ui/input';
 
 interface TransactionDetailsDialogProps {
     transaction: Transaction;
-    onUpdateCostCode: (transactionId: string, newCostCode: string) => void;
+    onUpdateField: (transactionId: string, field: keyof Transaction, value: string) => void;
     onReceiptUpload: (transactionId: string, file: File) => void;
     statusStyle: string;
 }
 
-export function TransactionDetailsDialog({ transaction, onUpdateCostCode, onReceiptUpload, statusStyle }: TransactionDetailsDialogProps) {
+export function TransactionDetailsDialog({ transaction, onUpdateField, onReceiptUpload, statusStyle }: TransactionDetailsDialogProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {
@@ -35,6 +35,14 @@ export function TransactionDetailsDialog({ transaction, onUpdateCostCode, onRece
       onReceiptUpload(transaction.id, file);
     }
   };
+
+  const handleFieldChange = (field: keyof Transaction) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    onUpdateField(transaction.id, field, e.target.value);
+  }
+
+  const handleCostCodeUpdate = (transactionId: string, newCostCode: string) => {
+    onUpdateField(transactionId, 'accountingCode', newCostCode);
+  }
 
   return (
     <DialogContent className="sm:max-w-lg">
@@ -58,34 +66,33 @@ export function TransactionDetailsDialog({ transaction, onUpdateCostCode, onRece
                     {transaction.status}
                 </Badge>
             </div>
-             <div>
-                <p className="font-medium text-muted-foreground">Memo</p>
-                <p>{transaction.memo || 'N/A'}</p>
-            </div>
         </div>
         
-        <div className="grid grid-cols-3 gap-4 text-sm">
-             <div>
-                <p className="font-medium text-muted-foreground">Job Name</p>
-                <p>{transaction.jobName || 'N/A'}</p>
-            </div>
-             <div>
-                <p className="font-medium text-muted-foreground">Job Phase</p>
-                <p>{transaction.jobPhase || 'N/A'}</p>
-            </div>
-             <div>
-                <p className="font-medium text-muted-foreground">Job Category</p>
-                <p>{transaction.jobCategory || 'N/A'}</p>
-            </div>
-        </div>
-
-        <div className="space-y-2">
-            <p className="font-medium text-muted-foreground">Accounting Code</p>
-            <CostCodeSuggester transaction={transaction} onUpdateCostCode={onUpdateCostCode} />
+        <div className="space-y-4">
+          <div className="space-y-2">
+              <Label htmlFor="accountingCode">Accounting Code</Label>
+              <CostCodeSuggester transaction={transaction} onUpdateCostCode={handleCostCodeUpdate} />
+          </div>
+          <div className="space-y-2">
+              <Label htmlFor="memo">Memo</Label>
+              <Input id="memo" value={transaction.memo || ''} onChange={handleFieldChange('memo')} placeholder="Enter memo..."/>
+          </div>
+          <div className="space-y-2">
+              <Label htmlFor="jobName">Job Name</Label>
+              <Input id="jobName" value={transaction.jobName || ''} onChange={handleFieldChange('jobName')} placeholder="Enter job name..."/>
+          </div>
+          <div className="space-y-2">
+              <Label htmlFor="jobPhase">Job Phase</Label>
+              <Input id="jobPhase" value={transaction.jobPhase || ''} onChange={handleFieldChange('jobPhase')} placeholder="Enter job phase..."/>
+          </div>
+          <div className="space-y-2">
+              <Label htmlFor="jobCategory">Job Category</Label>
+              <Input id="jobCategory" value={transaction.jobCategory || ''} onChange={handleFieldChange('jobCategory')} placeholder="Enter job category..."/>
+          </div>
         </div>
         
         <div className="space-y-2">
-             <p className="font-medium text-muted-foreground">Receipt</p>
+             <Label>Receipt</Label>
               {transaction.receiptUrl ? (
                 <div className='flex items-center gap-2'>
                     <a href={transaction.receiptUrl} target="_blank" rel="noopener noreferrer">

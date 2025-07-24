@@ -28,12 +28,25 @@ export function TransactionTable() {
   const [transactions, setTransactions] = React.useState<Transaction[]>(initialTransactions);
   const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction | null>(null);
 
-  const handleCostCodeUpdate = (transactionId: string, newCostCode: string) => {
+  const handleFieldUpdate = (transactionId: string, field: keyof Transaction, value: string) => {
     setTransactions(prev =>
-      prev.map(t => (t.id === transactionId ? { ...t, accountingCode: newCostCode, status: newCostCode && t.receiptUrl ? "Pending Sync" : t.status } : t))
+      prev.map(t => {
+        if (t.id === transactionId) {
+          const updatedTransaction = { ...t, [field]: value };
+          const isComplete = updatedTransaction.accountingCode && updatedTransaction.receiptUrl;
+          return { ...updatedTransaction, status: isComplete ? "Pending Sync" : "Needs Info" };
+        }
+        return t;
+      })
     );
-     if (selectedTransaction?.id === transactionId) {
-      setSelectedTransaction(prev => prev ? {...prev, accountingCode: newCostCode, status: newCostCode && prev.receiptUrl ? "Pending Sync" : prev.status} : null);
+
+    if (selectedTransaction?.id === transactionId) {
+      setSelectedTransaction(prev => {
+        if (!prev) return null;
+        const updatedTransaction = { ...prev, [field]: value };
+        const isComplete = updatedTransaction.accountingCode && updatedTransaction.receiptUrl;
+        return { ...updatedTransaction, status: isComplete ? "Pending Sync" : "Needs Info" };
+      });
     }
   };
   
@@ -42,10 +55,20 @@ export function TransactionTable() {
     reader.onload = (event) => {
         const receiptUrl = event.target?.result as string;
          setTransactions(prev =>
-            prev.map(t => (t.id === transactionId ? { ...t, receiptUrl, status: t.accountingCode ? "Pending Sync" : t.status } : t))
+            prev.map(t => {
+              if (t.id === transactionId) {
+                const isComplete = t.accountingCode && receiptUrl;
+                return { ...t, receiptUrl, status: isComplete ? "Pending Sync" : "Needs Info" };
+              }
+              return t;
+            })
         );
          if (selectedTransaction?.id === transactionId) {
-            setSelectedTransaction(prev => prev ? {...prev, receiptUrl, status: prev.accountingCode ? "Pending Sync" : prev.status} : null);
+            setSelectedTransaction(prev => {
+              if (!prev) return null;
+              const isComplete = prev.accountingCode && receiptUrl;
+              return { ...prev, receiptUrl, status: isComplete ? "Pending Sync" : "Needs Info" };
+            });
         }
     };
     reader.readAsDataURL(file);
@@ -94,7 +117,7 @@ export function TransactionTable() {
                   {selectedTransaction && selectedTransaction.id === transaction.id && (
                      <TransactionDetailsDialog
                         transaction={selectedTransaction}
-                        onUpdateCostCode={handleCostCodeUpdate}
+                        onUpdateField={handleFieldUpdate}
                         onReceiptUpload={handleReceiptUpload}
                         statusStyle={statusStyles[selectedTransaction.status]}
                      />
