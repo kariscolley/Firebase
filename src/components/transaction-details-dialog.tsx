@@ -18,6 +18,7 @@ import { Input } from './ui/input';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { ImageLightbox } from './image-lightbox';
+import { format, parseISO } from 'date-fns';
 
 interface TransactionDetailsDialogProps {
     transaction: Transaction;
@@ -96,7 +97,7 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                   </div>
                    <div>
                       <p className="font-medium text-muted-foreground">Date</p>
-                      <p>{new Date(transaction.date).toLocaleDateString()}</p>
+                      <p>{format(parseISO(transaction.date), 'MMMM dd, yyyy')}</p>
                   </div>
                   <div>
                       <p className="font-medium text-muted-foreground">Status</p>

@@ -24,7 +24,7 @@ import { Calendar } from './ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Search, SlidersHorizontal, Calendar as CalendarIcon, X } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 const statusStyles: { [key in TransactionStatus]: string } = {
@@ -103,7 +103,7 @@ export function TransactionTable() {
     const matchesStatus =
       statusFilter === 'all' || transaction.status === statusFilter;
 
-    const transactionDate = new Date(transaction.date);
+    const transactionDate = parseISO(transaction.date);
     const matchesDate = 
       !dateFilter ||
       (dateFilter.from && !dateFilter.to && transactionDate >= dateFilter.from) ||
@@ -212,7 +212,7 @@ export function TransactionTable() {
                         <div className="font-medium">{transaction.vendor}</div>
                         <div className="text-sm text-muted-foreground truncate max-w-[300px]">{transaction.description}</div>
                       </TableCell>
-                      <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                      <TableCell>{format(parseISO(transaction.date), 'MM/dd/yyyy')}</TableCell>
                       <TableCell className="text-right font-mono">${transaction.amount.toFixed(2)}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={statusStyles[transaction.status]}>
