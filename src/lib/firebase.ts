@@ -4,13 +4,12 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  "projectId": "ramp-link",
-  "appId": "1:1068230064402:web:6352ee474c3cf5a51f1bcb",
-  "storageBucket": "ramp-link.firebasestorage.app",
-  "apiKey": "AIzaSyCkooZMgcDWg-_KMSDnBmg1oYRtRtERmPs",
-  "authDomain": "ramp-link.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "1068230064402"
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
 };
 
 // Initialize Firebase
