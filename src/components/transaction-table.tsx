@@ -123,64 +123,66 @@ export function TransactionTable() {
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by vendor or description..."
+              placeholder="Search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                id="date"
-                variant={"outline"}
-                className={cn(
-                  "w-[260px] justify-start text-left font-normal",
-                  !dateFilter && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateFilter?.from ? (
-                  dateFilter.to ? (
-                    <>
-                      {format(dateFilter.from, "LLL dd, y")} -{" "}
-                      {format(dateFilter.to, "LLL dd, y")}
-                    </>
+          <div className='flex items-center gap-2'>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date"
+                  variant={"outline"}
+                  className={cn(
+                    "w-[260px] justify-start text-left font-normal",
+                    !dateFilter && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateFilter?.from ? (
+                    dateFilter.to ? (
+                      <>
+                        {format(dateFilter.from, "LLL dd, y")} -{" "}
+                        {format(dateFilter.to, "LLL dd, y")}
+                      </>
+                    ) : (
+                      format(dateFilter.from, "LLL dd, y")
+                    )
                   ) : (
-                    format(dateFilter.from, "LLL dd, y")
-                  )
-                ) : (
-                  <span>Filter by date</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-              {dateFilter && (
-                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setDateFilter(undefined)}>
-                  <X className="h-4 w-4" />
+                    <span>Filter by date</span>
+                  )}
                 </Button>
-              )}
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={dateFilter?.from}
-                selected={dateFilter}
-                onSelect={setDateFilter}
-                numberOfMonths={2}
-              />
-            </PopoverContent>
-          </Popover>
-          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as TransactionStatus | 'all')}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              {statusOptions.map(status => (
-                <SelectItem key={status} value={status}>{status}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              </PopoverTrigger>
+                {dateFilter && (
+                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setDateFilter(undefined)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateFilter?.from}
+                  selected={dateFilter}
+                  onSelect={setDateFilter}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as TransactionStatus | 'all')}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                {statusOptions.map(status => (
+                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
