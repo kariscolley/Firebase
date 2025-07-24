@@ -1,9 +1,9 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow for suggesting cost codes for transactions based on their details.
+ * @fileOverview This file defines a Genkit flow for suggesting accounting codes for transactions based on their details.
  *
- * - suggestCostCode - A function that takes transaction details as input and returns a suggested cost code.
+ * - suggestCostCode - A function that takes transaction details as input and returns a suggested accounting code.
  * - SuggestCostCodeInput - The input type for the suggestCostCode function.
  * - SuggestCostCodeOutput - The return type for the suggestCostCode function.
  */
@@ -19,7 +19,7 @@ const SuggestCostCodeInputSchema = z.object({
   previousCostCodes: z
     .array(z.string())
     .optional()
-    .describe('A list of previously used cost codes for similar transactions.'),
+    .describe('A list of previously used accounting codes for similar transactions.'),
 });
 
 export type SuggestCostCodeInput = z.infer<typeof SuggestCostCodeInputSchema>;
@@ -27,7 +27,7 @@ export type SuggestCostCodeInput = z.infer<typeof SuggestCostCodeInputSchema>;
 const SuggestCostCodeOutputSchema = z.object({
   suggestedCostCode: z
     .string()
-    .describe('The suggested cost code for the transaction.'),
+    .describe('The suggested accounting code for the transaction.'),
   confidenceScore: z
     .number()
     .describe(
@@ -36,7 +36,7 @@ const SuggestCostCodeOutputSchema = z.object({
   reasoning: z
     .string()
     .optional()
-    .describe('The reasoning behind the cost code suggestion.'),
+    .describe('The reasoning behind the accounting code suggestion.'),
 });
 
 export type SuggestCostCodeOutput = z.infer<typeof SuggestCostCodeOutputSchema>;
@@ -50,22 +50,22 @@ export async function suggestCostCode(
 const prompt = ai.definePrompt({
   name: 'suggestCostCodePrompt',
   input: {schema: SuggestCostCodeInputSchema},
-  output: {schema: SuggestCostCodeOutputSchema},
-  prompt: `You are an expert accounting assistant specializing in cost code assignment.
+  output: {schema: SuggestCostCode_OutputSchema},
+  prompt: `You are an expert accounting assistant specializing in accounting code assignment.
 
-You will be provided with transaction details and must suggest the most appropriate cost code.
+You will be provided with transaction details and must suggest the most appropriate accounting code.
 
 Transaction Description: {{{transactionDescription}}}
 Transaction Amount: {{{transactionAmount}}}
 
 {{#if previousCostCodes}}
-Previously Used Cost Codes for Similar Transactions:
+Previously Used Accounting Codes for Similar Transactions:
 {{#each previousCostCodes}}
 - {{{this}}}
 {{/each}}
 {{/if}}
 
-Consider all available information and provide a single, best-suited cost code. You MUST respond with JSON that contains a suggestedCostCode, a confidenceScore, and a reasoning field.
+Consider all available information and provide a single, best-suited accounting code. You MUST respond with JSON that contains a suggestedCostCode, a confidenceScore, and a reasoning field.
 `,
 });
 

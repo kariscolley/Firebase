@@ -6,7 +6,11 @@ export type Transaction = {
   amount: number;
   date: string;
   status: TransactionStatus;
-  costCode: string | null;
+  accountingCode: string | null;
+  memo: string | null;
+  jobName: string | null;
+  jobPhase: string | null;
+  jobCategory: string | null;
   receiptUrl: string | null;
   description: string;
 };
@@ -18,7 +22,11 @@ export const transactions: Transaction[] = [
     amount: 1250.75,
     date: '2024-07-22',
     status: 'Needs Info',
-    costCode: null,
+    accountingCode: null,
+    memo: 'Monthly cloud hosting',
+    jobName: 'Project Titan',
+    jobPhase: 'Infrastructure',
+    jobCategory: 'Cloud Services',
     receiptUrl: null,
     description: 'AWS monthly hosting fees for production servers.',
   },
@@ -28,7 +36,11 @@ export const transactions: Transaction[] = [
     amount: 360.0,
     date: '2024-07-21',
     status: 'Complete',
-    costCode: '7210 - Software & Subscriptions',
+    accountingCode: '7210 - Software & Subscriptions',
+    memo: 'Annual license',
+    jobName: 'Company-wide',
+    jobPhase: 'Design',
+    jobCategory: 'Software',
     receiptUrl: '/receipts/figma.pdf',
     description: 'Annual subscription for design team.',
   },
@@ -38,7 +50,11 @@ export const transactions: Transaction[] = [
     amount: 85.42,
     date: '2024-07-20',
     status: 'Needs Info',
-    costCode: null,
+    accountingCode: null,
+    memo: 'Office supplies',
+    jobName: 'HQ Maintenance',
+    jobPhase: 'Q3',
+    jobCategory: 'Facilities',
     receiptUrl: 'https://placehold.co/100x150.png',
     description: 'Office maintenance supplies.',
   },
@@ -48,7 +64,11 @@ export const transactions: Transaction[] = [
     amount: 175.2,
     date: '2024-07-19',
     status: 'Pending Sync',
-    costCode: '6450 - Meals & Entertainment',
+    accountingCode: '6450 - Meals & Entertainment',
+    memo: 'Quarterly team lunch',
+    jobName: 'Team Building',
+    jobPhase: 'Q3',
+    jobCategory: 'Employee Morale',
     receiptUrl: 'https://placehold.co/100x150.png',
     description: 'Team lunch for quarterly meeting.',
   },
@@ -58,7 +78,11 @@ export const transactions: Transaction[] = [
     amount: 150.0,
     date: '2024-07-18',
     status: 'Complete',
-    costCode: '7210 - Software & Subscriptions',
+    accountingCode: '7210 - Software & Subscriptions',
+    memo: null,
+    jobName: 'Company-wide',
+    jobPhase: 'Communications',
+    jobCategory: 'Software',
     receiptUrl: '/receipts/slack.pdf',
     description: 'Monthly Slack subscription.',
   },
@@ -68,7 +92,11 @@ export const transactions: Transaction[] = [
     amount: 734.55,
     date: '2024-07-17',
     status: 'Needs Info',
-    costCode: null,
+    accountingCode: null,
+    memo: 'Flight for J. Doe',
+    jobName: 'Client Visit SFO',
+    jobPhase: 'Sales',
+    jobCategory: 'Travel',
     receiptUrl: null,
     description: 'Flight for John Doe to client meeting in SFO.',
   },
@@ -78,7 +106,11 @@ export const transactions: Transaction[] = [
     amount: 210.0,
     date: '2024-07-15',
     status: 'Pending Sync',
-    costCode: '7210 - Software & Subscriptions',
+    accountingCode: '7210 - Software & Subscriptions',
+    memo: 'CI/CD services',
+    jobName: 'Project Titan',
+    jobPhase: 'Development',
+    jobCategory: 'Software',
     receiptUrl: null,
     description: 'Github monthly bill for engineering team.',
   },

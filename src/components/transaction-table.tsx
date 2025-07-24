@@ -14,11 +14,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { transactions as initialTransactions, type Transaction, type TransactionStatus } from '@/lib/data';
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { TransactionDetailsDialog } from './transaction-details-dialog';
 
@@ -34,20 +29,25 @@ export function TransactionTable() {
 
   const handleCostCodeUpdate = (transactionId: string, newCostCode: string) => {
     setTransactions(prev =>
-      prev.map(t => (t.id === transactionId ? { ...t, costCode: newCostCode, status: newCostCode && t.receiptUrl ? "Pending Sync" : t.status } : t))
+      prev.map(t => (t.id === transactionId ? { ...t, accountingCode: newCostCode, status: newCostCode && t.receiptUrl ? "Pending Sync" : t.status } : t))
     );
      if (selectedTransaction?.id === transactionId) {
-      setSelectedTransaction(prev => prev ? {...prev, costCode: newCostCode, status: newCostCode && prev.receiptUrl ? "Pending Sync" : prev.status} : null);
+      setSelectedTransaction(prev => prev ? {...prev, accountingCode: newCostCode, status: newCostCode && prev.receiptUrl ? "Pending Sync" : prev.status} : null);
     }
   };
   
-  const handleReceiptUpload = (transactionId: string) => {
-    setTransactions(prev =>
-      prev.map(t => (t.id === transactionId ? { ...t, receiptUrl: `/receipts/new-receipt.pdf`, status: t.costCode ? "Pending Sync" : t.status } : t))
-    );
-     if (selectedTransaction?.id === transactionId) {
-      setSelectedTransaction(prev => prev ? {...prev, receiptUrl: `/receipts/new-receipt.pdf`, status: prev.costCode ? "Pending Sync" : prev.status} : null);
-    }
+  const handleReceiptUpload = (transactionId: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const receiptUrl = event.target?.result as string;
+         setTransactions(prev =>
+            prev.map(t => (t.id === transactionId ? { ...t, receiptUrl, status: t.accountingCode ? "Pending Sync" : t.status } : t))
+        );
+         if (selectedTransaction?.id === transactionId) {
+            setSelectedTransaction(prev => prev ? {...prev, receiptUrl, status: prev.accountingCode ? "Pending Sync" : prev.status} : null);
+        }
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -72,7 +72,6 @@ export function TransactionTable() {
             <TableBody>
               {transactions.map(transaction => (
                  <Dialog key={transaction.id} onOpenChange={(isOpen) => !isOpen && setSelectedTransaction(null)}>
-                  <DialogTrigger asChild>
                     <TableRow 
                       onClick={() => setSelectedTransaction(transaction)} 
                       className="cursor-pointer"
@@ -89,7 +88,6 @@ export function TransactionTable() {
                         </Badge>
                       </TableCell>
                     </TableRow>
-                  </DialogTrigger>
                   {selectedTransaction && selectedTransaction.id === transaction.id && (
                      <TransactionDetailsDialog
                         transaction={selectedTransaction}

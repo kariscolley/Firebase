@@ -15,14 +15,14 @@ export async function getCostCodeSuggestion(
   const parsedInput = actionInputSchema.safeParse(input);
 
   if (!parsedInput.success) {
-    throw new Error('Invalid input for cost code suggestion.');
+    throw new Error('Invalid input for accounting code suggestion.');
   }
 
   try {
     const result = await suggestCostCode(parsedInput.data);
     return result;
   } catch (error) {
-    console.error("Error getting cost code suggestion:", error);
+    console.error("Error getting accounting code suggestion:", error);
     throw new Error("Failed to get AI suggestion. Please try again.");
   }
 }

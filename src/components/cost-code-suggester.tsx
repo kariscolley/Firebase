@@ -19,7 +19,7 @@ interface CostCodeSuggesterProps {
 }
 
 export function CostCodeSuggester({ transaction, onUpdateCostCode }: CostCodeSuggesterProps) {
-  const [inputValue, setInputValue] = useState(transaction.costCode || '');
+  const [inputValue, setInputValue] = useState(transaction.accountingCode || '');
   const [suggestion, setSuggestion] = useState<SuggestCostCodeOutput | null>(null);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -63,7 +63,7 @@ export function CostCodeSuggester({ transaction, onUpdateCostCode }: CostCodeSug
         type="text"
         value={inputValue}
         onChange={handleInputChange}
-        placeholder="Enter cost code..."
+        placeholder="Enter accounting code..."
         className="flex-grow"
       />
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
