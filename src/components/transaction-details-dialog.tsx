@@ -25,7 +25,8 @@ import { Skeleton } from './ui/skeleton';
 import { Combobox } from './ui/combobox';
 import { updateTransactionInFirestore } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 interface TransactionDetailsDialogProps {
     transaction: Transaction;
@@ -121,31 +122,58 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
     });
   }
 
-  const handleFieldChange = (field: keyof Transaction, value: any) => {
-     setLocalTransaction(prev => ({ ...prev, [field]: value }));
-  }
-
   const handleCostCodeUpdate = (newCostCode: string) => {
     handleCodedFieldChange('accountingCode', newCostCode);
   }
   
-  const handleDeleteReceipt = () => {
-    handleFieldChange('receiptUrl', null);
-    setIsLightboxOpen(false);
+  const handleDeleteReceipt = async () => {
+    if (!localTransaction.receiptUrl) return;
+
+    // Create a reference to the file to delete
+    const fileRef = ref(storage, localTransaction.receiptUrl);
+
+    try {
+        // Delete the file
+        await deleteObject(fileRef);
+
+        // Update Firestore
+        const result = await updateTransactionInFirestore({
+            id: localTransaction.id,
+            updates: { receiptUrl: null }
+        });
+
+        if (result.success) {
+            toast({ title: 'Success', description: 'Receipt deleted.' });
+            setIsLightboxOpen(false); // Close lightbox on successful deletion
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.message });
+        }
+    } catch (error) {
+        console.error("Error deleting receipt:", error);
+        toast({ variant: 'destructive', title: "Deletion Failed", description: "Could not delete the receipt." });
+    }
   };
 
   const handleReceiptUpload = async (file: File) => {
       setIsUploading(true);
-      const storage = getStorage();
-      // Create a unique path for the file
       const filePath = `receipts/${transaction.id}/${file.name}`;
       const storageRef = ref(storage, filePath);
 
       try {
           const snapshot = await uploadBytes(storageRef, file);
           const downloadURL = await getDownloadURL(snapshot.ref);
-          handleFieldChange('receiptUrl', downloadURL);
-          toast({ title: "Success", description: "Receipt uploaded successfully." });
+          
+          // After successful upload, update Firestore with the new URL
+          const result = await updateTransactionInFirestore({
+            id: transaction.id,
+            updates: { receiptUrl: downloadURL }
+          });
+
+          if (result.success) {
+            toast({ title: "Success", description: "Receipt uploaded successfully." });
+          } else {
+            toast({ variant: 'destructive', title: "Upload Failed", description: "Could not save the receipt URL." });
+          }
       } catch (error) {
           console.error("Error uploading receipt:", error);
           toast({ variant: 'destructive', title: "Upload Failed", description: "Could not upload the receipt." });
@@ -159,7 +187,6 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
     const result = await updateTransactionInFirestore({
         id: localTransaction.id,
         updates: {
-            receiptUrl: localTransaction.receiptUrl,
             codedFields: localTransaction.codedFields,
         }
     });
@@ -281,15 +308,6 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                           <Search className="h-8 w-8 text-white"/>
                        </div>
-                       <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={handleDeleteReceipt}
-                          className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label="Delete receipt"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                   </div>
               ) : (
                   <div
@@ -349,3 +367,5 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
     </>
   );
 }
+
+    

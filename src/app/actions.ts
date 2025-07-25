@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { saveAccountingFields } from '@/services/accounting-fields';
 import { saveCostCodes } from '@/services/cost-codes';
 import type { AccountingField, CostCode, CodedFields } from '@/lib/data';
-import { doc, updateDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const actionInputSchema = z.object({
@@ -18,7 +18,7 @@ const actionInputSchema = z.object({
 export async function getCostCodeSuggestion(
   input: SuggestCostCodeInput
 ): Promise<SuggestCostCodeOutput> {
-  const parsedInput = actionInputinputSchema.safeParse(input);
+  const parsedInput = actionInputSchema.safeParse(input);
 
   if (!parsedInput.success) {
     throw new Error('Invalid input for accounting code suggestion.');
@@ -53,17 +53,19 @@ export async function saveCostCodesAction(codes: CostCode[]) {
   }
 }
 
+const codedFieldsSchema = z.object({
+    accountingCode: z.string().optional().nullable(),
+    memo: z.string().optional().nullable(),
+    jobName: z.string().optional().nullable(),
+    jobPhase: z.string().optional().nullable(),
+    jobCategory: z.string().optional().nullable(),
+});
+
 const updateTransactionSchema = z.object({
     id: z.string(),
     updates: z.object({
         receiptUrl: z.string().optional().nullable(),
-        codedFields: z.object({
-            accountingCode: z.string().optional().nullable(),
-            memo: z.string().optional().nullable(),
-            jobName: z.string().optional().nullable(),
-            jobPhase: z.string().optional().nullable(),
-            jobCategory: z.string().optional().nullable(),
-        })
+        codedFields: codedFieldsSchema.optional(),
     })
 })
 
@@ -75,6 +77,7 @@ export async function updateTransactionInFirestore(
 ) {
   const validation = updateTransactionSchema.safeParse(input);
   if (!validation.success) {
+    console.error("Invalid input for updateTransactionInFirestore:", validation.error);
     return { success: false, message: 'Invalid input.' };
   }
 
@@ -82,15 +85,22 @@ export async function updateTransactionInFirestore(
   const transactionRef = doc(db, 'ramp_transactions', id);
 
   try {
-    // Using dot notation to update nested fields in the 'codedFields' object
     const updatePayload: { [key: string]: any } = {};
+    
     if (updates.receiptUrl !== undefined) {
       updatePayload.receiptUrl = updates.receiptUrl;
     }
-    for (const [key, value] of Object.entries(updates.codedFields)) {
-        if (value !== undefined) {
-            updatePayload[`codedFields.${key}`] = value;
+
+    if (updates.codedFields) {
+        for (const [key, value] of Object.entries(updates.codedFields)) {
+            if (value !== undefined) {
+                updatePayload[`codedFields.${key}`] = value;
+            }
         }
+    }
+
+    if (Object.keys(updatePayload).length === 0) {
+        return { success: true, message: 'No updates to perform.' };
     }
 
     await updateDoc(transactionRef, updatePayload);
@@ -169,3 +179,5 @@ export async function seedSampleData() {
     return { success: false, message: 'Failed to seed sample data.' };
   }
 }
+
+    
