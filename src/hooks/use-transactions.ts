@@ -10,12 +10,17 @@ const TRANSACTIONS_COLLECTION = 'ramp_transactions';
 
 function docDataToTransaction(doc: DocumentData): Transaction {
     const data = doc.data();
-    const isComplete = data.accountingCode && data.receiptUrl;
+    const codedFields = data.codedFields || {};
     
-    let status: TransactionStatus = 'Needs Info';
-    if(isComplete) {
-      // This is a simplified status. A real app might check a `syncedAt` timestamp.
-      status = 'Pending Sync'; 
+    // Determine status based on coded fields and sync status
+    const hasRequiredFields = codedFields.accountingCode && data.receiptUrl;
+    let status: TransactionStatus;
+    if (data.syncedToRamp) {
+      status = 'Complete';
+    } else if (hasRequiredFields) {
+      status = 'Pending Sync';
+    } else {
+      status = 'Needs Info';
     }
     
     return {
@@ -24,13 +29,16 @@ function docDataToTransaction(doc: DocumentData): Transaction {
         amount: data.amount || 0,
         date: data.date, // Assuming date is stored as an ISO string
         description: data.description || '',
-        status: status, // This status is now derived
-        accountingCode: data.accountingCode || null,
-        memo: data.memo || null,
-        jobName: data.jobName || null,
-        jobPhase: data.jobPhase || null,
-        jobCategory: data.jobCategory || null,
+        status: status,
         receiptUrl: data.receiptUrl || null,
+        codedFields: {
+            accountingCode: codedFields.accountingCode || null,
+            memo: codedFields.memo || null,
+            jobName: codedFields.jobName || null,
+            jobPhase: codedFields.jobPhase || null,
+            jobCategory: codedFields.jobCategory || null,
+        },
+        syncedToRamp: !!data.syncedToRamp,
     };
 }
 

@@ -12,7 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UploadCloud, CheckCircle, Trash2, Search, Loader } from 'lucide-react';
-import { type Transaction } from '@/lib/data';
+import { type Transaction, type CodedFields } from '@/lib/data';
 import { useAccountingFields } from '@/hooks/use-accounting-fields';
 import { CostCodeSuggester } from './cost-code-suggester';
 import { Label } from './ui/label';
@@ -53,20 +53,20 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
   }, [accountingFields]);
 
   const availablePhases = React.useMemo(() => {
-    if (!localTransaction.jobName) return [];
+    if (!localTransaction.codedFields.jobName) return [];
     return accountingFields
-      .filter(f => f.jobName === localTransaction.jobName)
+      .filter(f => f.jobName === localTransaction.codedFields.jobName)
       .filter((value, index, self) => self.findIndex(t => t.phaseName === value.phaseName) === index)
       .map(phase => ({ value: phase.phaseName, label: `${phase.phaseId} - ${phase.phaseName}`}));
-  }, [localTransaction.jobName, accountingFields]);
+  }, [localTransaction.codedFields.jobName, accountingFields]);
 
   const availableCategories = React.useMemo(() => {
-    if (!localTransaction.jobPhase) return [];
+    if (!localTransaction.codedFields.jobPhase) return [];
      return accountingFields
-      .filter(f => f.jobName === localTransaction.jobName && f.phaseName === localTransaction.jobPhase)
+      .filter(f => f.jobName === localTransaction.codedFields.jobName && f.phaseName === localTransaction.codedFields.jobPhase)
       .filter((value, index, self) => self.findIndex(t => t.categoryName === value.categoryName) === index)
       .map(cat => ({ value: cat.categoryName, label: `${cat.categoryId} - ${cat.categoryName}`}));
-  }, [localTransaction.jobName, localTransaction.jobPhase, accountingFields]);
+  }, [localTransaction.codedFields.jobName, localTransaction.codedFields.jobPhase, accountingFields]);
 
 
   const handleUploadClick = () => {
@@ -104,23 +104,29 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
     }
   };
 
-  const handleFieldChange = (field: keyof Transaction, value: string | null) => {
+  const handleCodedFieldChange = (field: keyof CodedFields, value: string | null) => {
     setLocalTransaction(prev => {
-        const newState = { ...prev, [field]: value };
+        const newCodedFields = { ...prev.codedFields, [field]: value };
+        
         // Reset dependent fields if a parent changes
         if (field === 'jobName') {
-            newState.jobPhase = null;
-            newState.jobCategory = null;
+            newCodedFields.jobPhase = null;
+            newCodedFields.jobCategory = null;
         }
         if (field === 'jobPhase') {
-            newState.jobCategory = null;
+            newCodedFields.jobCategory = null;
         }
-        return newState;
+
+        return { ...prev, codedFields: newCodedFields };
     });
   }
 
+  const handleFieldChange = (field: keyof Transaction, value: any) => {
+     setLocalTransaction(prev => ({ ...prev, [field]: value }));
+  }
+
   const handleCostCodeUpdate = (newCostCode: string) => {
-    handleFieldChange('accountingCode', newCostCode);
+    handleCodedFieldChange('accountingCode', newCostCode);
   }
   
   const handleDeleteReceipt = () => {
@@ -153,12 +159,8 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
     const result = await updateTransactionInFirestore({
         id: localTransaction.id,
         updates: {
-            accountingCode: localTransaction.accountingCode,
-            memo: localTransaction.memo,
-            jobName: localTransaction.jobName,
-            jobPhase: localTransaction.jobPhase,
-            jobCategory: localTransaction.jobCategory,
             receiptUrl: localTransaction.receiptUrl,
+            codedFields: localTransaction.codedFields,
         }
     });
 
@@ -205,8 +207,8 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
                 <div className="space-y-2">
                     <Label>Memo</Label>
                     <Input 
-                        value={localTransaction.memo || ''} 
-                        onChange={(e) => handleFieldChange('memo', e.target.value)}
+                        value={localTransaction.codedFields.memo || ''} 
+                        onChange={(e) => handleCodedFieldChange('memo', e.target.value)}
                         placeholder="Enter memo..."/>
                 </div>
                 { loadingFields ? (
@@ -230,8 +232,8 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
                     <Label>Job Name</Label>
                     <Combobox
                         options={availableJobs}
-                        value={localTransaction.jobName || ''}
-                        onValueChange={(value) => handleFieldChange('jobName', value)}
+                        value={localTransaction.codedFields.jobName || ''}
+                        onValueChange={(value) => handleCodedFieldChange('jobName', value)}
                         placeholder="Select job..."
                         searchPlaceholder="Search jobs..."
                     />
@@ -240,22 +242,22 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
                     <Label>Job Phase</Label>
                     <Combobox
                         options={availablePhases}
-                        value={localTransaction.jobPhase || ''}
-                        onValueChange={(value) => handleFieldChange('jobPhase', value)}
+                        value={localTransaction.codedFields.jobPhase || ''}
+                        onValueChange={(value) => handleCodedFieldChange('jobPhase', value)}
                         placeholder="Select phase..."
                         searchPlaceholder="Search phases..."
-                        disabled={!localTransaction.jobName}
+                        disabled={!localTransaction.codedFields.jobName}
                     />
                 </div>
                 <div className="space-y-2">
                     <Label>Job Category</Label>
                     <Combobox
                         options={availableCategories}
-                        value={localTransaction.jobCategory || ''}
-                        onValueChange={(value) => handleFieldChange('jobCategory', value)}
+                        value={localTransaction.codedFields.jobCategory || ''}
+                        onValueChange={(value) => handleCodedFieldChange('jobCategory', value)}
                         placeholder="Select category..."
                         searchPlaceholder="Search categories..."
-                        disabled={!localTransaction.jobPhase}
+                        disabled={!localTransaction.codedFields.jobPhase}
                     />
                 </div>
                 </>

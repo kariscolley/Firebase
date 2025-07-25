@@ -62,11 +62,14 @@ export function TransactionTable() {
       const searchTermLower = searchTerm.toLowerCase();
       return transaction.vendor.toLowerCase().includes(searchTermLower) ||
              transaction.description.toLowerCase().includes(searchTermLower) ||
-             (transaction.accountingCode && transaction.accountingCode.toLowerCase().includes(searchTermLower));
+             (transaction.codedFields.accountingCode && transaction.codedFields.accountingCode.toLowerCase().includes(searchTermLower));
     });
 
     if (sortConfig.key !== null) {
       sortableItems.sort((a, b) => {
+        // We can't sort by the 'codedFields' object directly, handle special cases
+        if (sortConfig.key === 'codedFields') return 0;
+        
         const aValue = a[sortConfig.key!];
         const bValue = b[sortConfig.key!];
 

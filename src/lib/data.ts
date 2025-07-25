@@ -1,19 +1,24 @@
 
 export type TransactionStatus = 'Complete' | 'Needs Info' | 'Pending Sync';
 
+export type CodedFields = {
+  accountingCode: string | null;
+  memo: string | null;
+  jobName: string | null;
+  jobPhase: string | null;
+  jobCategory: string | null;
+};
+
 export type Transaction = {
   id: string;
   vendor: string;
   amount: number;
   date: string; // Should be ISO 8601 format string
   status: TransactionStatus;
-  accountingCode: string | null;
-  memo: string | null;
-  jobName: string | null;
-  jobPhase: string | null;
-  jobCategory: string | null;
   receiptUrl: string | null;
   description: string;
+  codedFields: CodedFields;
+  syncedToRamp?: boolean;
 };
 
 export const costCodes: CostCode[] = [

@@ -18,7 +18,7 @@ import { Combobox } from './ui/combobox';
 
 interface CostCodeSuggesterProps {
   transaction: Transaction;
-  onUpdateCostCode: (transactionId: string, newCostCode: string) => void;
+  onUpdateCostCode: (newCostCode: string) => void;
 }
 
 export function CostCodeSuggester({ transaction, onUpdateCostCode }: CostCodeSuggesterProps) {
@@ -50,14 +50,14 @@ export function CostCodeSuggester({ transaction, onUpdateCostCode }: CostCodeSug
 
   const handleApplySuggestion = () => {
     if (suggestion) {
-      onUpdateCostCode(transaction.id, suggestion.suggestedCostCode);
+      onUpdateCostCode(suggestion.suggestedCostCode);
       setIsPopoverOpen(false);
     }
   };
 
   const handleValueChange = (value: string | null) => {
     if (value) {
-      onUpdateCostCode(transaction.id, value);
+      onUpdateCostCode(value);
     }
   };
 
@@ -74,7 +74,7 @@ export function CostCodeSuggester({ transaction, onUpdateCostCode }: CostCodeSug
     <div className="flex items-center gap-2 w-full">
        <Combobox
             options={activeCostCodes}
-            value={transaction.accountingCode || ''}
+            value={transaction.codedFields.accountingCode || ''}
             onValueChange={handleValueChange}
             placeholder="Select accounting code..."
             searchPlaceholder="Search codes..."
