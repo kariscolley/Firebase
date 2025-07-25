@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { saveAccountingFields } from '@/services/accounting-fields';
 import { saveCostCodes } from '@/services/cost-codes';
 import type { AccountingField, CostCode, CodedFields } from '@/lib/data';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const actionInputSchema = z.object({
@@ -18,7 +18,7 @@ const actionInputSchema = z.object({
 export async function getCostCodeSuggestion(
   input: SuggestCostCodeInput
 ): Promise<SuggestCostCodeOutput> {
-  const parsedInput = actionInputSchema.safeParse(input);
+  const parsedInput = actionInputinputSchema.safeParse(input);
 
   if (!parsedInput.success) {
     throw new Error('Invalid input for accounting code suggestion.');
@@ -99,5 +99,73 @@ export async function updateTransactionInFirestore(
     console.error(`Error updating transaction ${id}:`, error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
     return { success: false, message: `Failed to update transaction: ${errorMessage}` };
+  }
+}
+
+
+const sampleTransactions = [
+  {
+    id: 'txn_01HCNYKGBNKZXV1M4C9G8P7B4A',
+    vendor: 'Amazon Web Services',
+    amount: 150.75,
+    date: '2023-11-01T10:00:00Z',
+    description: 'Monthly AWS Hosting Bill',
+    receiptUrl: null,
+    syncedToRamp: false,
+    codedFields: {
+      accountingCode: null,
+      memo: null,
+      jobName: null,
+      jobPhase: null,
+      jobCategory: null,
+    },
+  },
+  {
+    id: 'txn_01HCNYKGBNKZXV1M4C9G8P7B4B',
+    vendor: 'Figma',
+    amount: 54.0,
+    date: '2023-11-02T11:30:00Z',
+    description: 'Design Tool Subscription',
+    receiptUrl: 'https://placehold.co/1200x1600.png',
+    syncedToRamp: false,
+    codedFields: {
+      accountingCode: '7210 - Software & Subscriptions',
+      memo: 'Annual renewal',
+      jobName: null,
+      jobPhase: null,
+      jobCategory: null,
+    },
+  },
+  {
+    id: 'txn_01HCNYKGBNKZXV1M4C9G8P7B4C',
+    vendor: 'The Coffee Shop',
+    amount: 12.5,
+    date: '2023-11-03T09:00:00Z',
+    description: 'Team Coffee Meeting',
+    receiptUrl: null,
+    syncedToRamp: false,
+    codedFields: {
+      accountingCode: null,
+      memo: null,
+      jobName: null,
+      jobPhase: null,
+      jobCategory: null,
+    },
+  },
+];
+
+
+export async function seedSampleData() {
+  try {
+    const batch = writeBatch(db);
+    sampleTransactions.forEach(tx => {
+      const docRef = doc(db, 'ramp_transactions', tx.id);
+      batch.set(docRef, tx);
+    });
+    await batch.commit();
+    return { success: true, message: 'Sample data seeded successfully.' };
+  } catch (error) {
+    console.error('Error seeding sample data:', error);
+    return { success: false, message: 'Failed to seed sample data.' };
   }
 }

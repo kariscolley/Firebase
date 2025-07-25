@@ -20,10 +20,12 @@ import {
 import { TransactionDetailsDialog } from './transaction-details-dialog';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Search, ArrowUpDown } from 'lucide-react';
+import { Search, ArrowUpDown, Database, Loader } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useTransactions } from '@/hooks/use-transactions';
 import { Skeleton } from './ui/skeleton';
+import { seedSampleData } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 const statusStyles: { [key in TransactionStatus]: string } = {
   'Complete': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800',
@@ -38,6 +40,19 @@ export function TransactionTable() {
   const [selectedTransactionId, setSelectedTransactionId] = React.useState<string | null>(null);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [sortConfig, setSortConfig] = React.useState<{ key: SortKey; direction: 'ascending' | 'descending' }>({ key: 'date', direction: 'descending' });
+  const [isSeeding, setIsSeeding] = React.useState(false);
+  const { toast } = useToast();
+
+  const handleSeedData = async () => {
+    setIsSeeding(true);
+    const result = await seedSampleData();
+    if (result.success) {
+      toast({ title: 'Success', description: result.message });
+    } else {
+      toast({ variant: 'destructive', title: 'Error', description: result.message });
+    }
+    setIsSeeding(false);
+  };
 
   const requestSort = (key: keyof Transaction) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -51,7 +66,6 @@ export function TransactionTable() {
     if (sortConfig.key !== key) {
       return <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-50" />;
     }
-    // This is simplified for brevity. You might want to show different arrows for asc/desc.
     return <ArrowUpDown className="ml-2 h-4 w-4" />;
   };
 
@@ -67,7 +81,6 @@ export function TransactionTable() {
 
     if (sortConfig.key !== null) {
       sortableItems.sort((a, b) => {
-        // We can't sort by the 'codedFields' object directly, handle special cases
         if (sortConfig.key === 'codedFields') return 0;
         
         const aValue = a[sortConfig.key!];
@@ -113,8 +126,19 @@ export function TransactionTable() {
     if (sortedAndFilteredTransactions.length === 0) {
         return (
             <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
-                    No transactions found.
+                <TableCell colSpan={4} className="h-48 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <p className="text-lg font-medium">No transactions found.</p>
+                      <p className="text-muted-foreground">Get started by seeding your database with sample data.</p>
+                      <Button onClick={handleSeedData} disabled={isSeeding}>
+                        {isSeeding ? (
+                          <Loader className="mr-2 animate-spin" />
+                        ) : (
+                          <Database className="mr-2" />
+                        )}
+                        Seed Sample Data
+                      </Button>
+                    </div>
                 </TableCell>
             </TableRow>
         );
@@ -206,7 +230,6 @@ export function TransactionTable() {
       </CardContent>
     </Card>
     
-    {/* Dialog is now outside the table render loop to avoid issues with state and triggers */}
      <Dialog open={!!selectedTransactionId} onOpenChange={(isOpen) => !isOpen && setSelectedTransactionId(null)}>
         {selectedTransaction && (
           <TransactionDetailsDialog
