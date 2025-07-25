@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { type Transaction, type TransactionStatus } from '@/lib/data';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query, DocumentData } from 'firebase/firestore';
+import { collection, onSnapshot, query, DocumentData, Timestamp } from 'firebase/firestore';
 
 const TRANSACTIONS_COLLECTION = 'ramp_transactions';
 
@@ -12,7 +12,6 @@ function docDataToTransaction(doc: DocumentData): Transaction {
     const data = doc.data();
     const codedFields = data.codedFields;
     
-    // Determine status based on coded fields and sync status
     const hasRequiredFields = codedFields?.accountingCode && data.receiptUrl;
     let status: TransactionStatus;
 
@@ -24,11 +23,20 @@ function docDataToTransaction(doc: DocumentData): Transaction {
       status = 'Needs Info';
     }
     
+    let dateString: string;
+    if (data.date instanceof Timestamp) {
+        dateString = data.date.toDate().toISOString();
+    } else if (typeof data.date === 'string') {
+        dateString = data.date;
+    } else {
+        dateString = new Date().toISOString();
+    }
+
     return {
         id: doc.id,
         vendor: data.vendor || 'Unknown Vendor',
         amount: data.amount || 0,
-        date: data.date, // Assuming date is stored as an ISO string
+        date: dateString,
         description: data.description || '',
         status: status,
         receiptUrl: data.receiptUrl || null,
