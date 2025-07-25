@@ -20,7 +20,7 @@ import {
 import { TransactionDetailsDialog } from './transaction-details-dialog';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Search, ArrowUpDown, Loader } from 'lucide-react';
+import { Search, ArrowUpDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useTransactions } from '@/hooks/use-transactions';
 import { Skeleton } from './ui/skeleton';

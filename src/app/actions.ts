@@ -5,7 +5,7 @@ import { suggestCostCode, type SuggestCostCodeInput, type SuggestCostCodeOutput 
 import { z } from 'zod';
 import { saveAccountingFields } from '@/services/accounting-fields';
 import { saveCostCodes } from '@/services/cost-codes';
-import type { AccountingField, CostCode, Transaction } from '@/lib/data';
+import type { AccountingField, CostCode } from '@/lib/data';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
