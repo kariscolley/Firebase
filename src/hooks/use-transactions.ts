@@ -10,10 +10,10 @@ const TRANSACTIONS_COLLECTION = 'ramp_transactions';
 
 function docDataToTransaction(doc: DocumentData): Transaction {
     const data = doc.data();
-    const codedFields = data.codedFields || {};
+    const codedFields = data.codedFields;
     
     // Determine status based on coded fields and sync status
-    const hasRequiredFields = codedFields.accountingCode && data.receiptUrl;
+    const hasRequiredFields = codedFields?.accountingCode && data.receiptUrl;
     let status: TransactionStatus;
 
     if (data.syncedToRamp) {
@@ -33,11 +33,11 @@ function docDataToTransaction(doc: DocumentData): Transaction {
         status: status,
         receiptUrl: data.receiptUrl || null,
         codedFields: {
-            accountingCode: codedFields.accountingCode || null,
-            memo: codedFields.memo || null,
-            jobName: codedFields.jobName || null,
-            jobPhase: codedFields.jobPhase || null,
-            jobCategory: codedFields.jobCategory || null,
+            accountingCode: codedFields?.accountingCode || null,
+            memo: codedFields?.memo || null,
+            jobName: codedFields?.jobName || null,
+            jobPhase: codedFields?.jobPhase || null,
+            jobCategory: codedFields?.jobCategory || null,
         },
         syncedToRamp: !!data.syncedToRamp,
     };
@@ -52,15 +52,19 @@ export function useTransactions() {
     const q = query(collection(db, TRANSACTIONS_COLLECTION));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const transactionsData: Transaction[] = [];
-      querySnapshot.forEach((doc) => {
-        transactionsData.push(docDataToTransaction(doc));
-      });
-      setTransactions(transactionsData);
-      setLoading(false);
+      try {
+        const transactionsData: Transaction[] = [];
+        querySnapshot.forEach((doc) => {
+          transactionsData.push(docDataToTransaction(doc));
+        });
+        setTransactions(transactionsData);
+      } catch (error) {
+        console.error("Error processing transaction data:", error);
+      } finally {
+        setLoading(false);
+      }
     }, (error) => {
       console.error("Error listening to transactions collection:", error);
-      // Handle the error appropriately in a real app
       setLoading(false);
     });
 
