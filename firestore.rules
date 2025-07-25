@@ -1,18 +1,8 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Allow public read access to configuration, but restrict writes.
-    match /configuration/{docId} {
-      allow read: if true;
-      allow write: if false; // Or be more specific, e.g., if request.auth.uid != null
-    }
-
-    // Allow public read/write access to transactions for this demo.
-    // In a production app, you would lock this down.
-    match /ramp_transactions/{transactionId} {
+    match /{document=**} {
       allow read, write: if true;
     }
   }
