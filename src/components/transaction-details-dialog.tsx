@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { UploadCloud, CheckCircle, Trash2, Search, Loader } from 'lucide-react';
+import { CheckCircle, Loader, Search, Info } from 'lucide-react';
 import { type Transaction, type CodedFields } from '@/lib/data';
 import { useAccountingFields } from '@/hooks/use-accounting-fields';
 import { CostCodeSuggester } from './cost-code-suggester';
@@ -25,8 +25,7 @@ import { Skeleton } from './ui/skeleton';
 import { Combobox } from './ui/combobox';
 import { updateTransactionInFirestore } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { storage } from '@/lib/firebase';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 interface TransactionDetailsDialogProps {
     transaction: Transaction;
@@ -35,12 +34,9 @@ interface TransactionDetailsDialogProps {
 }
 
 export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: TransactionDetailsDialogProps) {
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = React.useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
   const { fields: accountingFields, loading: loadingFields } = useAccountingFields();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isUploading, setIsUploading] = React.useState(false);
   const { toast } = useToast();
 
   const [localTransaction, setLocalTransaction] = React.useState(transaction);
@@ -69,47 +65,10 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
       .map(cat => ({ value: cat.categoryName, label: `${cat.categoryId} - ${cat.categoryName}`}));
   }, [localTransaction.codedFields.jobName, localTransaction.codedFields.jobPhase, accountingFields]);
 
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-  
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      await handleReceiptUpload(file);
-    }
-  };
-
-  const handleDragEvents = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-    handleDragEvents(e);
-    setIsDragging(true);
-  };
-  
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    handleDragEvents(e);
-    setIsDragging(false);
-  };
-  
-  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-    handleDragEvents(e);
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      await handleReceiptUpload(file);
-    }
-  };
-
   const handleCodedFieldChange = (field: keyof CodedFields, value: string | null) => {
     setLocalTransaction(prev => {
         const newCodedFields = { ...prev.codedFields, [field]: value };
         
-        // Reset dependent fields if a parent changes
         if (field === 'jobName') {
             newCodedFields.jobPhase = null;
             newCodedFields.jobCategory = null;
@@ -127,59 +86,12 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
   }
   
   const handleDeleteReceipt = async () => {
-    if (!localTransaction.receiptUrl) return;
-
-    // Create a reference to the file to delete
-    const fileRef = ref(storage, localTransaction.receiptUrl);
-
-    try {
-        // Delete the file
-        await deleteObject(fileRef);
-
-        // Update Firestore
-        const result = await updateTransactionInFirestore({
-            id: localTransaction.id,
-            updates: { receiptUrl: null }
-        });
-
-        if (result.success) {
-            toast({ title: 'Success', description: 'Receipt deleted.' });
-            setIsLightboxOpen(false); // Close lightbox on successful deletion
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: result.message });
-        }
-    } catch (error) {
-        console.error("Error deleting receipt:", error);
-        toast({ variant: 'destructive', title: "Deletion Failed", description: "Could not delete the receipt." });
-    }
-  };
-
-  const handleReceiptUpload = async (file: File) => {
-      setIsUploading(true);
-      const filePath = `receipts/${transaction.id}/${file.name}`;
-      const storageRef = ref(storage, filePath);
-
-      try {
-          const snapshot = await uploadBytes(storageRef, file);
-          const downloadURL = await getDownloadURL(snapshot.ref);
-          
-          // After successful upload, update Firestore with the new URL
-          const result = await updateTransactionInFirestore({
-            id: transaction.id,
-            updates: { receiptUrl: downloadURL }
-          });
-
-          if (result.success) {
-            toast({ title: "Success", description: "Receipt uploaded successfully." });
-          } else {
-            toast({ variant: 'destructive', title: "Upload Failed", description: "Could not save the receipt URL." });
-          }
-      } catch (error) {
-          console.error("Error uploading receipt:", error);
-          toast({ variant: 'destructive', title: "Upload Failed", description: "Could not upload the receipt." });
-      } finally {
-          setIsUploading(false);
-      }
+    toast({
+        variant: 'destructive',
+        title: 'Function Not Implemented',
+        description: 'Receipt deletion is not available in this demo.',
+    });
+    setIsLightboxOpen(false);
   };
 
   const handleSubmit = async () => {
@@ -311,45 +223,25 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
                   </div>
               ) : (
                   <div
-                      onClick={handleUploadClick}
-                      onDragEnter={handleDragEnter}
-                      onDragLeave={handleDragLeave}
-                      onDragOver={handleDragEvents}
-                      onDrop={handleDrop}
                       className={cn(
-                          "flex flex-col flex-grow items-center justify-center border-2 border-dashed rounded-lg p-8 text-center cursor-pointer h-full transition-colors",
-                          "text-muted-foreground hover:text-primary hover:border-primary",
-                          isDragging && "bg-accent border-primary",
-                          isUploading && "cursor-wait"
+                          "flex flex-col flex-grow items-center justify-center border-2 border-dashed rounded-lg p-8 text-center h-full",
+                          "text-muted-foreground"
                       )}
                   >
-                    { isUploading ? (
-                        <>
-                           <Loader className="h-12 w-12 mb-4 animate-spin" />
-                           <p className="font-semibold">Uploading...</p>
-                        </>
-                    ) : (
-                       <>
-                         <UploadCloud className="h-12 w-12 mb-4" />
-                         <p className="font-semibold">Drag & drop your receipt here</p>
-                         <p className="text-sm">or click to browse</p>
-                       </>
-                    )}
-                      <input
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleFileChange}
-                          className="hidden"
-                          accept="image/*,application/pdf"
-                          disabled={isUploading}
-                      />
+                    <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertTitle>No Receipt</AlertTitle>
+                        <AlertDescription>
+                            There is no receipt associated with this transaction. Please add one through another method.
+                        </AlertDescription>
+                    </Alert>
                   </div>
               )}
           </div>
         </div>
         <DialogFooter>
             <Button variant="outline" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={isSubmitting || isUploading}>
+            <Button onClick={handleSubmit} disabled={isSubmitting}>
               {isSubmitting && <Loader className="mr-2 animate-spin" />}
               <CheckCircle className="mr-2 h-4 w-4" />
               Save Changes
@@ -367,5 +259,3 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
     </>
   );
 }
-
-    
