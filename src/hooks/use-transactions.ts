@@ -12,6 +12,7 @@ function docDataToTransaction(doc: DocumentData): Transaction {
     const data = doc.data();
     const codedFields = data.codedFields;
     
+    // Simplified status logic to avoid errors
     const hasRequiredFields = codedFields?.accountingCode && data.receiptUrl;
     let status: TransactionStatus;
 
@@ -24,11 +25,13 @@ function docDataToTransaction(doc: DocumentData): Transaction {
     }
     
     let dateString: string;
+    // Correctly handle Firestore Timestamps
     if (data.date instanceof Timestamp) {
         dateString = data.date.toDate().toISOString();
     } else if (typeof data.date === 'string') {
         dateString = data.date;
     } else {
+        // Fallback for older data that might not have a proper date
         dateString = new Date().toISOString();
     }
 
@@ -37,9 +40,9 @@ function docDataToTransaction(doc: DocumentData): Transaction {
         vendor: data.vendor || 'Unknown Vendor',
         amount: data.amount || 0,
         date: dateString,
-        description: data.description || '',
         status: status,
         receiptUrl: data.receiptUrl || null,
+        description: data.description || '',
         codedFields: {
             accountingCode: codedFields?.accountingCode || null,
             memo: codedFields?.memo || null,
