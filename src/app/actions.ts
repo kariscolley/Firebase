@@ -179,5 +179,3 @@ export async function seedSampleData() {
     return { success: false, message: 'Failed to seed sample data.' };
   }
 }
-
-    

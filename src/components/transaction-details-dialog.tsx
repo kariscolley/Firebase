@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Loader, Search, Info } from 'lucide-react';
+import { CheckCircle, Loader, Search } from 'lucide-react';
 import { type Transaction, type CodedFields } from '@/lib/data';
 import { useAccountingFields } from '@/hooks/use-accounting-fields';
 import { CostCodeSuggester } from './cost-code-suggester';
@@ -25,7 +25,7 @@ import { Skeleton } from './ui/skeleton';
 import { Combobox } from './ui/combobox';
 import { updateTransactionInFirestore } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { ReceiptUploader } from './receipt-uploader';
 
 interface TransactionDetailsDialogProps {
     transaction: Transaction;
@@ -86,12 +86,16 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
   }
   
   const handleDeleteReceipt = async () => {
-    toast({
-        variant: 'destructive',
-        title: 'Function Not Implemented',
-        description: 'Receipt deletion is not available in this demo.',
+    const result = await updateTransactionInFirestore({
+        id: localTransaction.id,
+        updates: { receiptUrl: null }
     });
-    setIsLightboxOpen(false);
+    if (result.success) {
+        toast({ title: 'Success', description: 'Receipt removed.' });
+        setIsLightboxOpen(false);
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.message });
+    }
   };
 
   const handleSubmit = async () => {
@@ -222,20 +226,7 @@ export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: 
                        </div>
                   </div>
               ) : (
-                  <div
-                      className={cn(
-                          "flex flex-col flex-grow items-center justify-center border-2 border-dashed rounded-lg p-8 text-center h-full",
-                          "text-muted-foreground"
-                      )}
-                  >
-                    <Alert>
-                        <Info className="h-4 w-4" />
-                        <AlertTitle>No Receipt</AlertTitle>
-                        <AlertDescription>
-                            There is no receipt associated with this transaction. Please add one through another method.
-                        </AlertDescription>
-                    </Alert>
-                  </div>
+                  <ReceiptUploader transactionId={localTransaction.id} />
               )}
           </div>
         </div>

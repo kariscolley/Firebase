@@ -4,11 +4,11 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  projectId: "ramp-link",
-  appId: "1:1068230064402:web:6352ee474c3cf5a51f1bcb",
-  storageBucket: "ramp-link.appspot.com",
+  projectId: "ramplink-3151a",
+  storageBucket: "ramplink-3151a.appspot.com",
   apiKey: "AIzaSyCkooZMgcDWg-_KMSDnBmg1oYRtRtERmPs",
-  authDomain: "ramp-link.firebaseapp.com",
+  authDomain: "ramplink-3151a.firebaseapp.com",
+  appId: "1:1068230064402:web:6352ee474c3cf5a51f1bcb",
   messagingSenderId: "1068230064402",
 };
 
