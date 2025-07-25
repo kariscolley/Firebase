@@ -15,6 +15,7 @@ function docDataToTransaction(doc: DocumentData): Transaction {
     // Determine status based on coded fields and sync status
     const hasRequiredFields = codedFields.accountingCode && data.receiptUrl;
     let status: TransactionStatus;
+
     if (data.syncedToRamp) {
       status = 'Complete';
     } else if (hasRequiredFields) {
