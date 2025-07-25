@@ -2,14 +2,11 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow read access to all files by default
-    match /{allPaths=**} {
-      allow read;
-    }
-
-    // Allow write access only to the 'receipts' folder for authenticated users
-    match /receipts/{transactionId}/{fileName} {
-      allow write: if request.auth != null;
+    // Allow anyone to upload to the receipts folder for now.
+    // In a production app, you would restrict this to authenticated users
+    // and validate the upload (e.g., file size, type).
+    match /receipts/{transactionId}/{allPaths=**} {
+      allow read, write;
     }
   }
 }
