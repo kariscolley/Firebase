@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -11,7 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { transactions as initialTransactions, type Transaction, type TransactionStatus } from '@/lib/data';
+import { type Transaction, type TransactionStatus } from '@/lib/data';
 import {
   Dialog,
   DialogTrigger,
@@ -19,8 +20,10 @@ import {
 import { TransactionDetailsDialog } from './transaction-details-dialog';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Search, ArrowUpDown } from 'lucide-react';
+import { Search, ArrowUpDown, Loader } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { useTransactions } from '@/hooks/use-transactions';
+import { Skeleton } from './ui/skeleton';
 
 const statusStyles: { [key in TransactionStatus]: string } = {
   'Complete': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800',
@@ -31,63 +34,10 @@ const statusStyles: { [key in TransactionStatus]: string } = {
 type SortKey = keyof Transaction | null;
 
 export function TransactionTable() {
-  const [transactions, setTransactions] = React.useState<Transaction[]>(initialTransactions);
-  const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction | null>(null);
+  const { transactions, loading } = useTransactions();
+  const [selectedTransactionId, setSelectedTransactionId] = React.useState<string | null>(null);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [sortConfig, setSortConfig] = React.useState<{ key: SortKey; direction: 'ascending' | 'descending' }>({ key: 'date', direction: 'descending' });
-
-
-  const handleFieldUpdate = (transactionId: string, field: keyof Transaction, value: string | null) => {
-    setTransactions(prev =>
-      prev.map(t => {
-        if (t.id === transactionId) {
-          const updatedTransaction = { ...t, [field]: value };
-          if (field === 'accountingCode' || field === 'receiptUrl') {
-            const isComplete = updatedTransaction.accountingCode && updatedTransaction.receiptUrl;
-            return { ...updatedTransaction, status: isComplete ? "Pending Sync" : "Needs Info" };
-          }
-          return updatedTransaction;
-        }
-        return t;
-      })
-    );
-
-    if (selectedTransaction?.id === transactionId) {
-      setSelectedTransaction(prev => {
-        if (!prev) return null;
-        const updatedTransaction = { ...prev, [field]: value };
-        if (field === 'accountingCode' || field === 'receiptUrl') {
-          const isComplete = updatedTransaction.accountingCode && updatedTransaction.receiptUrl;
-          return { ...updatedTransaction, status: isComplete ? "Pending Sync" : "Needs Info" };
-        }
-        return updatedTransaction;
-      });
-    }
-  };
-  
-  const handleReceiptUpload = (transactionId: string, file: File) => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        const receiptUrl = event.target?.result as string;
-         setTransactions(prev =>
-            prev.map(t => {
-              if (t.id === transactionId) {
-                const isComplete = t.accountingCode && receiptUrl;
-                return { ...t, receiptUrl, status: isComplete ? "Pending Sync" : "Needs Info" };
-              }
-              return t;
-            })
-        );
-         if (selectedTransaction?.id === transactionId) {
-            setSelectedTransaction(prev => {
-              if (!prev) return null;
-              const isComplete = prev.accountingCode && receiptUrl;
-              return { ...prev, receiptUrl, status: isComplete ? "Pending Sync" : "Needs Info" };
-            });
-        }
-    };
-    reader.readAsDataURL(file);
-  };
 
   const requestSort = (key: keyof Transaction) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -101,9 +51,7 @@ export function TransactionTable() {
     if (sortConfig.key !== key) {
       return <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-50" />;
     }
-    if (sortConfig.direction === 'ascending') {
-      return <ArrowUpDown className="ml-2 h-4 w-4" />;
-    }
+    // This is simplified for brevity. You might want to show different arrows for asc/desc.
     return <ArrowUpDown className="ml-2 h-4 w-4" />;
   };
 
@@ -140,7 +88,64 @@ export function TransactionTable() {
     return sortableItems;
   }, [transactions, searchTerm, sortConfig]);
 
+  const selectedTransaction = React.useMemo(() => {
+    return transactions.find(t => t.id === selectedTransactionId) || null;
+  }, [selectedTransactionId, transactions]);
+
+  const renderTableBody = () => {
+    if (loading) {
+      return Array.from({ length: 5 }).map((_, i) => (
+        <TableRow key={`loading-${i}`}>
+          <TableCell>
+            <Skeleton className="h-5 w-32 mb-1" />
+            <Skeleton className="h-4 w-48" />
+          </TableCell>
+          <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+          <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
+          <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+        </TableRow>
+      ));
+    }
+    
+    if (sortedAndFilteredTransactions.length === 0) {
+        return (
+            <TableRow>
+                <TableCell colSpan={4} className="h-24 text-center">
+                    No transactions found.
+                </TableCell>
+            </TableRow>
+        );
+    }
+
+    return sortedAndFilteredTransactions.map(transaction => (
+      <Dialog key={transaction.id} onOpenChange={(isOpen) => {
+          if (isOpen) {
+              setSelectedTransactionId(transaction.id)
+          } else {
+              setSelectedTransactionId(null)
+          }
+      }}>
+        <DialogTrigger asChild>
+          <TableRow className="cursor-pointer">
+            <TableCell>
+              <div className="font-medium">{transaction.vendor}</div>
+              <div className="text-sm text-muted-foreground truncate max-w-[300px]">{transaction.description}</div>
+            </TableCell>
+            <TableCell>{format(parseISO(transaction.date), 'MM/dd/yyyy')}</TableCell>
+            <TableCell className="text-right font-mono">${transaction.amount.toFixed(2)}</TableCell>
+            <TableCell>
+              <Badge variant="outline" className={statusStyles[transaction.status]}>
+                {transaction.status}
+              </Badge>
+            </TableCell>
+          </TableRow>
+        </DialogTrigger>
+      </Dialog>
+    ));
+  };
+  
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Transactions</CardTitle>
@@ -165,25 +170,25 @@ export function TransactionTable() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[350px]">
-                   <Button variant="ghost" onClick={() => requestSort('vendor')} className="px-0">
+                   <Button variant="ghost" onClick={() => requestSort('vendor')} className="px-0 group">
                     Transaction
                     {getSortIndicator('vendor')}
                   </Button>
                 </TableHead>
                 <TableHead>
-                  <Button variant="ghost" onClick={() => requestSort('date')} className="px-0">
+                  <Button variant="ghost" onClick={() => requestSort('date')} className="px-0 group">
                     Date
                     {getSortIndicator('date')}
                   </Button>
                 </TableHead>
                 <TableHead className="text-right">
-                  <Button variant="ghost" onClick={() => requestSort('amount')} className="px-0">
+                  <Button variant="ghost" onClick={() => requestSort('amount')} className="px-0 group">
                     Amount
                     {getSortIndicator('amount')}
                   </Button>
                 </TableHead>
                 <TableHead>
-                  <Button variant="ghost" onClick={() => requestSort('status')} className="px-0">
+                  <Button variant="ghost" onClick={() => requestSort('status')} className="px-0 group">
                     Status
                     {getSortIndicator('status')}
                   </Button>
@@ -191,44 +196,23 @@ export function TransactionTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedAndFilteredTransactions.map(transaction => (
-                 <Dialog key={transaction.id} onOpenChange={(isOpen) => {
-                    if (!isOpen) {
-                        setSelectedTransaction(null)
-                    }
-                 }}>
-                  <DialogTrigger asChild>
-                    <TableRow 
-                      onClick={() => setSelectedTransaction(transaction)} 
-                      className="cursor-pointer"
-                    >
-                      <TableCell>
-                        <div className="font-medium">{transaction.vendor}</div>
-                        <div className="text-sm text-muted-foreground truncate max-w-[300px]">{transaction.description}</div>
-                      </TableCell>
-                      <TableCell>{format(parseISO(transaction.date), 'MM/dd/yyyy')}</TableCell>
-                      <TableCell className="text-right font-mono">${transaction.amount.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={statusStyles[transaction.status]}>
-                          {transaction.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  </DialogTrigger>
-                  {selectedTransaction && selectedTransaction.id === transaction.id && (
-                     <TransactionDetailsDialog
-                        transaction={selectedTransaction}
-                        onUpdateField={handleFieldUpdate}
-                        onReceiptUpload={handleReceiptUpload}
-                        statusStyle={statusStyles[selectedTransaction.status]}
-                     />
-                  )}
-                </Dialog>
-              ))}
+              {renderTableBody()}
             </TableBody>
           </Table>
         </div>
       </CardContent>
     </Card>
+    
+    {/* Dialog is now outside the table render loop to avoid issues with state and triggers */}
+     <Dialog open={!!selectedTransactionId} onOpenChange={(isOpen) => !isOpen && setSelectedTransactionId(null)}>
+        {selectedTransaction && (
+          <TransactionDetailsDialog
+              transaction={selectedTransaction}
+              statusStyle={statusStyles[selectedTransaction.status]}
+              onClose={() => setSelectedTransactionId(null)}
+          />
+        )}
+      </Dialog>
+    </>
   );
 }

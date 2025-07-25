@@ -7,11 +7,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogClose,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { UploadCloud, CheckCircle, Trash2, Search } from 'lucide-react';
+import { UploadCloud, CheckCircle, Trash2, Search, Loader } from 'lucide-react';
 import { type Transaction } from '@/lib/data';
 import { useAccountingFields } from '@/hooks/use-accounting-fields';
 import { CostCodeSuggester } from './cost-code-suggester';
@@ -23,51 +23,60 @@ import { ImageLightbox } from './image-lightbox';
 import { format, parseISO } from 'date-fns';
 import { Skeleton } from './ui/skeleton';
 import { Combobox } from './ui/combobox';
+import { updateTransactionInFirestore } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 interface TransactionDetailsDialogProps {
     transaction: Transaction;
-    onUpdateField: (transactionId: string, field: keyof Transaction, value: string | null) => void;
-    onReceiptUpload: (transactionId: string, file: File) => void;
     statusStyle: string;
+    onClose: () => void;
 }
 
-export function TransactionDetailsDialog({ transaction, onUpdateField, onReceiptUpload, statusStyle }: TransactionDetailsDialogProps) {
+export function TransactionDetailsDialog({ transaction, statusStyle, onClose }: TransactionDetailsDialogProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
   const { fields: accountingFields, loading: loadingFields } = useAccountingFields();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isUploading, setIsUploading] = React.useState(false);
+  const { toast } = useToast();
 
-  // Derive available options from the selected values
+  const [localTransaction, setLocalTransaction] = React.useState(transaction);
+  React.useEffect(() => {
+    setLocalTransaction(transaction);
+  }, [transaction]);
+
   const availableJobs = React.useMemo(() => {
     return [...new Map(accountingFields.map(item => [item.jobName, item])).values()]
       .map(job => ({ value: job.jobName, label: `${job.jobId} - ${job.jobName}`}));
   }, [accountingFields]);
 
   const availablePhases = React.useMemo(() => {
-    if (!transaction.jobName) return [];
+    if (!localTransaction.jobName) return [];
     return accountingFields
-      .filter(f => f.jobName === transaction.jobName)
+      .filter(f => f.jobName === localTransaction.jobName)
       .filter((value, index, self) => self.findIndex(t => t.phaseName === value.phaseName) === index)
       .map(phase => ({ value: phase.phaseName, label: `${phase.phaseId} - ${phase.phaseName}`}));
-  }, [transaction.jobName, accountingFields]);
+  }, [localTransaction.jobName, accountingFields]);
 
   const availableCategories = React.useMemo(() => {
-    if (!transaction.jobPhase) return [];
+    if (!localTransaction.jobPhase) return [];
      return accountingFields
-      .filter(f => f.jobName === transaction.jobName && f.phaseName === transaction.jobPhase)
+      .filter(f => f.jobName === localTransaction.jobName && f.phaseName === localTransaction.jobPhase)
       .filter((value, index, self) => self.findIndex(t => t.categoryName === value.categoryName) === index)
       .map(cat => ({ value: cat.categoryName, label: `${cat.categoryId} - ${cat.categoryName}`}));
-  }, [transaction.jobName, transaction.jobPhase, accountingFields]);
+  }, [localTransaction.jobName, localTransaction.jobPhase, accountingFields]);
 
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
   
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      onReceiptUpload(transaction.id, file);
+      await handleReceiptUpload(file);
     }
   };
 
@@ -86,60 +95,104 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
     setIsDragging(false);
   };
   
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     handleDragEvents(e);
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file) {
-      onReceiptUpload(transaction.id, file);
+      await handleReceiptUpload(file);
     }
   };
 
-  const handleFieldChange = (field: keyof Transaction) => (value: string | null) => {
-    onUpdateField(transaction.id, field, value);
-
-    // Reset dependent fields if a parent changes
-    if (field === 'jobName') {
-        onUpdateField(transaction.id, 'jobPhase', null);
-        onUpdateField(transaction.id, 'jobCategory', null);
-    }
-    if (field === 'jobPhase') {
-        onUpdateField(transaction.id, 'jobCategory', null);
-    }
+  const handleFieldChange = (field: keyof Transaction, value: string | null) => {
+    setLocalTransaction(prev => {
+        const newState = { ...prev, [field]: value };
+        // Reset dependent fields if a parent changes
+        if (field === 'jobName') {
+            newState.jobPhase = null;
+            newState.jobCategory = null;
+        }
+        if (field === 'jobPhase') {
+            newState.jobCategory = null;
+        }
+        return newState;
+    });
   }
 
-  const handleCostCodeUpdate = (transactionId: string, newCostCode: string) => {
-    onUpdateField(transactionId, 'accountingCode', newCostCode);
+  const handleCostCodeUpdate = (newCostCode: string) => {
+    handleFieldChange('accountingCode', newCostCode);
   }
   
   const handleDeleteReceipt = () => {
-    onUpdateField(transaction.id, 'receiptUrl', null);
+    handleFieldChange('receiptUrl', null);
     setIsLightboxOpen(false);
   };
 
+  const handleReceiptUpload = async (file: File) => {
+      setIsUploading(true);
+      const storage = getStorage();
+      // Create a unique path for the file
+      const filePath = `receipts/${transaction.id}/${file.name}`;
+      const storageRef = ref(storage, filePath);
+
+      try {
+          const snapshot = await uploadBytes(storageRef, file);
+          const downloadURL = await getDownloadURL(snapshot.ref);
+          handleFieldChange('receiptUrl', downloadURL);
+          toast({ title: "Success", description: "Receipt uploaded successfully." });
+      } catch (error) {
+          console.error("Error uploading receipt:", error);
+          toast({ variant: 'destructive', title: "Upload Failed", description: "Could not upload the receipt." });
+      } finally {
+          setIsUploading(false);
+      }
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    const result = await updateTransactionInFirestore({
+        id: localTransaction.id,
+        updates: {
+            accountingCode: localTransaction.accountingCode,
+            memo: localTransaction.memo,
+            jobName: localTransaction.jobName,
+            jobPhase: localTransaction.jobPhase,
+            jobCategory: localTransaction.jobCategory,
+            receiptUrl: localTransaction.receiptUrl,
+        }
+    });
+
+    if (result.success) {
+        toast({ title: 'Success', description: 'Transaction updated.' });
+        onClose();
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.message });
+    }
+    setIsSubmitting(false);
+  }
 
   return (
     <>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle className="font-headline text-2xl">{transaction.vendor}</DialogTitle>
-          <DialogDescription>{transaction.description}</DialogDescription>
+          <DialogTitle className="font-headline text-2xl">{localTransaction.vendor}</DialogTitle>
+          <DialogDescription>{localTransaction.description}</DialogDescription>
         </DialogHeader>
         <div className="grid md:grid-cols-2 gap-8 py-4">
           <div className="flex flex-col space-y-6">
               <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                       <p className="font-medium text-muted-foreground">Amount</p>
-                      <p className="font-mono text-lg font-semibold">${transaction.amount.toFixed(2)}</p>
+                      <p className="font-mono text-lg font-semibold">${localTransaction.amount.toFixed(2)}</p>
                   </div>
                    <div>
                       <p className="font-medium text-muted-foreground">Date</p>
-                      <p>{format(parseISO(transaction.date), 'MMMM dd, yyyy')}</p>
+                      <p>{format(parseISO(localTransaction.date), 'MMMM dd, yyyy')}</p>
                   </div>
                   <div>
                       <p className="font-medium text-muted-foreground">Status</p>
                        <Badge variant="outline" className={statusStyle}>
-                          {transaction.status}
+                          {localTransaction.status}
                       </Badge>
                   </div>
               </div>
@@ -147,11 +200,14 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
               <div className="space-y-4 flex-grow">
                 <div className="space-y-2">
                     <Label>Accounting Code</Label>
-                    <CostCodeSuggester transaction={transaction} onUpdateCostCode={handleCostCodeUpdate} />
+                    <CostCodeSuggester transaction={localTransaction} onUpdateCostCode={handleCostCodeUpdate} />
                 </div>
                 <div className="space-y-2">
                     <Label>Memo</Label>
-                    <Input value={transaction.memo || ''} onChange={(e) => onUpdateField(transaction.id, 'memo', e.target.value)} placeholder="Enter memo..."/>
+                    <Input 
+                        value={localTransaction.memo || ''} 
+                        onChange={(e) => handleFieldChange('memo', e.target.value)}
+                        placeholder="Enter memo..."/>
                 </div>
                 { loadingFields ? (
                    <div className="space-y-4">
@@ -174,8 +230,8 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                     <Label>Job Name</Label>
                     <Combobox
                         options={availableJobs}
-                        value={transaction.jobName || ''}
-                        onValueChange={handleFieldChange('jobName')}
+                        value={localTransaction.jobName || ''}
+                        onValueChange={(value) => handleFieldChange('jobName', value)}
                         placeholder="Select job..."
                         searchPlaceholder="Search jobs..."
                     />
@@ -184,43 +240,37 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                     <Label>Job Phase</Label>
                     <Combobox
                         options={availablePhases}
-                        value={transaction.jobPhase || ''}
-                        onValueChange={handleFieldChange('jobPhase')}
+                        value={localTransaction.jobPhase || ''}
+                        onValueChange={(value) => handleFieldChange('jobPhase', value)}
                         placeholder="Select phase..."
                         searchPlaceholder="Search phases..."
-                        disabled={!transaction.jobName}
+                        disabled={!localTransaction.jobName}
                     />
                 </div>
                 <div className="space-y-2">
                     <Label>Job Category</Label>
                     <Combobox
                         options={availableCategories}
-                        value={transaction.jobCategory || ''}
-                        onValueChange={handleFieldChange('jobCategory')}
+                        value={localTransaction.jobCategory || ''}
+                        onValueChange={(value) => handleFieldChange('jobCategory', value)}
                         placeholder="Select category..."
                         searchPlaceholder="Search categories..."
-                        disabled={!transaction.jobPhase}
+                        disabled={!localTransaction.jobPhase}
                     />
                 </div>
                 </>
                 )}
               </div>
-              <DialogClose asChild>
-                <Button className="w-full mt-auto">
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Submit
-                </Button>
-              </DialogClose>
           </div>
           <div className="space-y-2 flex flex-col">
               <Label>Receipt</Label>
-              {transaction.receiptUrl ? (
+              {localTransaction.receiptUrl ? (
                   <div className='relative group border rounded-lg overflow-hidden h-full'>
                       <button onClick={() => setIsLightboxOpen(true)} className="w-full h-full absolute inset-0 z-10">
                         <span className="sr-only">View full receipt</span>
                       </button>
                       <Image 
-                        src={transaction.receiptUrl} 
+                        src={localTransaction.receiptUrl} 
                         alt="Transaction Receipt" 
                         fill
                         className="object-contain bg-muted"
@@ -249,30 +299,49 @@ export function TransactionDetailsDialog({ transaction, onUpdateField, onReceipt
                       className={cn(
                           "flex flex-col flex-grow items-center justify-center border-2 border-dashed rounded-lg p-8 text-center cursor-pointer h-full transition-colors",
                           "text-muted-foreground hover:text-primary hover:border-primary",
-                          isDragging && "bg-accent border-primary"
+                          isDragging && "bg-accent border-primary",
+                          isUploading && "cursor-wait"
                       )}
                   >
-                      <UploadCloud className="h-12 w-12 mb-4" />
-                      <p className="font-semibold">Drag & drop your receipt here</p>
-                      <p className="text-sm">or click to browse</p>
+                    { isUploading ? (
+                        <>
+                           <Loader className="h-12 w-12 mb-4 animate-spin" />
+                           <p className="font-semibold">Uploading...</p>
+                        </>
+                    ) : (
+                       <>
+                         <UploadCloud className="h-12 w-12 mb-4" />
+                         <p className="font-semibold">Drag & drop your receipt here</p>
+                         <p className="text-sm">or click to browse</p>
+                       </>
+                    )}
                       <input
                           type="file"
                           ref={fileInputRef}
                           onChange={handleFileChange}
                           className="hidden"
                           accept="image/*,application/pdf"
+                          disabled={isUploading}
                       />
                   </div>
               )}
           </div>
         </div>
+        <DialogFooter>
+            <Button variant="outline" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
+            <Button onClick={handleSubmit} disabled={isSubmitting || isUploading}>
+              {isSubmitting && <Loader className="mr-2 animate-spin" />}
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Save Changes
+            </Button>
+        </DialogFooter>
       </DialogContent>
-       {transaction.receiptUrl && (
+       {localTransaction.receiptUrl && (
         <ImageLightbox 
           isOpen={isLightboxOpen}
           onClose={() => setIsLightboxOpen(false)}
           onDelete={handleDeleteReceipt}
-          imageUrl={transaction.receiptUrl}
+          imageUrl={localTransaction.receiptUrl}
         />
       )}
     </>
