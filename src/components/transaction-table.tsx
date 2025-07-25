@@ -66,7 +66,7 @@ export function TransactionTable() {
     if (sortConfig.key !== key) {
       return <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-50" />;
     }
-    return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    return <ArrowUpDown className="ml-2 h-4" />;
   };
 
   const sortedAndFilteredTransactions = React.useMemo(() => {
