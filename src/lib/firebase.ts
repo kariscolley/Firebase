@@ -6,7 +6,7 @@ import { getStorage } from "firebase/storage";
 const firebaseConfig = {
   projectId: "ramp-link",
   appId: "1:1068230064402:web:6352ee474c3cf5a51f1bcb",
-  storageBucket: "ramp-link.firebasestorage.app",
+  storageBucket: "ramp-link.appspot.com",
   apiKey: "AIzaSyCkooZMgcDWg-_KMSDnBmg1oYRtRtERmPs",
   authDomain: "ramp-link.firebaseapp.com",
   messagingSenderId: "1068230064402",
